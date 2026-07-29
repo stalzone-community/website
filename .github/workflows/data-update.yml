@@ -1,0 +1,144 @@
+name: Data update
+
+# Redeploys when EXBO pushes a new item database.
+#
+# WHY GITHUB ACTIONS AND NOT A FLY CRON:
+# the item data is baked into the image at build time, so an update means
+# rebuild + redeploy — a CI operation. A Fly scheduled machine would have to
+# carry a deploy token and redeploy its own app. Fly's `--schedule` also only
+# accepts hourly/daily/weekly/monthly with no cron expressions, so it cannot
+# target patch day at all. (A Fly machine IS the right home for the auction
+# poller later: that one is runtime work and redeploys nothing.)
+#
+# WHY NOT A PLAIN WEEKLY CRON:
+# 75 of the last 100 upstream commits were Wednesday, but patch days push
+# several commits hours apart (2026-07-22: four, 05:51 -> 09:48 UTC) and
+# hotfixes land Thu/Fri. So this runs often and gates on the upstream commit
+# SHA: `vendor-db.ts --check` exits 10 when stale, 0 when current, and the run
+# stops on 0. One GitHub API call per probe — effectively free.
+#
+# HOW THE GATE STAYS HONEST:
+# src/lib/data/db-source.json is committed (three fields, ~150 bytes) and is
+# the record of what was last deployed. items.json is NOT committed — it is
+# generated inside the Docker build. After a successful deploy the `record`
+# job commits the new SHA, so the next probe compares against reality instead
+# of redeploying forever.
+on:
+  schedule:
+    # patch day — several passes to cover the multi-commit window
+    - cron: '25 6,9,12,16 * * 3'
+    # safety net for Thursday/Friday hotfixes
+    - cron: '25 8 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Redeploy even if upstream has not moved'
+        type: boolean
+        default: false
+
+concurrency:
+  group: data-update-stalzone
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Upstream changed?
+    runs-on: ubuntu-latest
+    outputs:
+      stale: ${{ steps.probe.outputs.stale }}
+      sha: ${{ steps.probe.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 26
+
+      - id: probe
+        env:
+          # lifts the unauthenticated 60 req/h limit; the upstream repo is
+          # public so the default token needs no extra scope
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # jq is preinstalled on ubuntu-latest runners
+          sha=$(curl -sS --fail -H "authorization: Bearer $GITHUB_TOKEN" \
+                  https://api.github.com/repos/EXBO-Studio/stalzone-database/commits/main \
+                | jq -re .sha)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+          if [ "${{ inputs.force }}" = "true" ]; then
+            echo "forced rebuild"; echo "stale=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+
+          set +e; node scripts/vendor-db.ts --check; code=$?; set -e
+          case "$code" in
+            0)  echo "stale=false" >> "$GITHUB_OUTPUT" ;;
+            10) echo "stale=true"  >> "$GITHUB_OUTPUT" ;;
+            *)  echo "vendor-db --check failed with $code" >&2; exit "$code" ;;
+          esac
+
+  # Catches a new stat key or a broken normalise BEFORE burning a deploy. The
+  # image build would fail on it anyway, but failing here is faster and the
+  # error is legible.
+  verify:
+    name: Verify normalise
+    needs: check
+    if: needs.check.outputs.stale == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - name: Vendor upstream database
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/vendor-db.ts
+      # Throws UnknownStatKeyError if EXBO added a stat with an unmapped
+      # namespace — a red run here beats silently dropping the stat.
+      - name: Normalise
+        run: node scripts/build-items.ts
+      - name: Field coverage
+        run: node scripts/report-fields.ts | head -60
+      - run: npm run check
+      - run: npm run build
+
+  deploy:
+    name: Deploy
+    needs: [check, verify]
+    uses: Geptyro/github-workflows/.github/workflows/fly-deploy.yml@main
+    with:
+      app: stalzone-website
+    secrets:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  record:
+    name: Record deployed version
+    needs: [check, deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Stamp db-source.json with the deployed upstream SHA
+        env:
+          SHA: ${{ needs.check.outputs.sha }}
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            const p = "src/lib/data/db-source.json";
+            const cur = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : {};
+            fs.writeFileSync(p, JSON.stringify(
+              { ...cur, sha: process.env.SHA, fetchedAt: new Date().toISOString() },
+              null, "\t") + "\n");
+          '
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add src/lib/data/db-source.json
+          git diff --staged --quiet && { echo 'no change'; exit 0; }
+          git commit -m "data: deploy upstream ${SHA:0:8}"
+          git push

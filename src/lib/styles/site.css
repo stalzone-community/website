@@ -1,0 +1,11 @@
+/*
+ * The handful of global styles that are STALZONE's and not the commons reset.
+ * Everything else — the reset, element styles, form controls, scrollbars,
+ * .mono and .visually-hidden — comes from sveltekit-commons/base.css.
+ */
+
+/* Item icons are pixel art upscaled from small sources — smoothing turns them
+   to mush, so they render nearest-neighbour everywhere. */
+.icon {
+	image-rendering: pixelated;
+}

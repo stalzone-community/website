@@ -1,0 +1,116 @@
+/*
+ * LAYER 2 — the STALZONE skin.
+ *
+ * Rust, concrete and hazard green. The scale, rhythm and shape come from
+ * sveltekit-commons/tokens.css; this file supplies only the colours it leaves
+ * unnamed, plus the rank bands that are STALZONE's alone.
+ *
+ * Imported AFTER the contract, so anything declared here also wins as an
+ * override — see the import block in src/routes/+layout.svelte.
+ */
+
+:root {
+	/* ── dark: the default, because it is a Zone game ─────────────────── */
+	--bg: #14150f;
+	--surface: #1c1e15;
+	--surface-raised: #24271b;
+	--surface-sunken: #101109;
+	--border: #34382a;
+	--border-strong: #4a4f3b;
+
+	--text: #ded9c8;
+	--text-dim: #9a9884;
+	--text-faint: #6b6a5c;
+
+	/* hazard green — the Zone's signature, used sparingly */
+	--accent: #9fd356;
+	--accent-dim: #6f9a33;
+	--accent-contrast: #14150f;
+
+	--danger: #d3564f;
+	--warn: #d39b4f;
+	--ok: #6fae5c;
+
+	/* The contract's shadows are tuned for a light skin. On near-black
+	   surfaces a 0.08 shadow is invisible, so both go heavier. */
+	--shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+	--shadow-2: 0 2px 10px rgb(0 0 0 / 0.5);
+
+	/* rank bands — mapped from the game's own RANK_* colours. STALZONE-only,
+	   which is why they are here and not in the contract. */
+	--rank-default: #8a8a80;
+	--rank-newbie: #b8b8ae;
+	--rank-stalker: #6fae5c;
+	--rank-veteran: #4f93d3;
+	--rank-master: #a86fd3;
+	--rank-legend: #d3a84f;
+	--rank-quest_item: #d3564f;
+}
+
+/*
+ * Light is a deliberate second-class citizen — the game is dark and the Zone
+ * palette does not translate — but "unreadable in light mode" is not
+ * acceptable either, so the neutrals invert and the accents darken.
+ *
+ * Declared once and applied from two selectors: the OS preference (unless the
+ * visitor chose dark) and the explicit choice. Both must win in both
+ * directions, which is why the block is repeated rather than nested.
+ */
+@media (prefers-color-scheme: light) {
+	:root:not([data-theme='dark']) {
+		--bg: #f2f1e8;
+		--surface: #ffffff;
+		--surface-raised: #fbfaf3;
+		--surface-sunken: #e6e5da;
+		--border: #d2d1c2;
+		--border-strong: #b3b2a2;
+
+		--text: #23241b;
+		--text-dim: #5c5d50;
+		--text-faint: #86877a;
+
+		--accent: #5c7d24;
+		--accent-dim: #7fa53c;
+		--accent-contrast: #ffffff;
+
+		--shadow-1: 0 1px 2px rgb(30 32 24 / 0.08);
+		--shadow-2: 0 2px 10px rgb(30 32 24 / 0.12);
+
+		--rank-default: #6f6f66;
+		--rank-newbie: #77776d;
+		--rank-stalker: #43813a;
+		--rank-veteran: #2c6ba8;
+		--rank-master: #7a41a8;
+		--rank-legend: #9a7411;
+		--rank-quest_item: #a83c36;
+	}
+}
+
+/* The theme toggle stamps data-theme on the root; it must win both ways. */
+:root[data-theme='light'] {
+	--bg: #f2f1e8;
+	--surface: #ffffff;
+	--surface-raised: #fbfaf3;
+	--surface-sunken: #e6e5da;
+	--border: #d2d1c2;
+	--border-strong: #b3b2a2;
+
+	--text: #23241b;
+	--text-dim: #5c5d50;
+	--text-faint: #86877a;
+
+	--accent: #5c7d24;
+	--accent-dim: #7fa53c;
+	--accent-contrast: #ffffff;
+
+	--shadow-1: 0 1px 2px rgb(30 32 24 / 0.08);
+	--shadow-2: 0 2px 10px rgb(30 32 24 / 0.12);
+
+	--rank-default: #6f6f66;
+	--rank-newbie: #77776d;
+	--rank-stalker: #43813a;
+	--rank-veteran: #2c6ba8;
+	--rank-master: #7a41a8;
+	--rank-legend: #9a7411;
+	--rank-quest_item: #a83c36;
+}
