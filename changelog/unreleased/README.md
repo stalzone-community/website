@@ -34,7 +34,13 @@ https only).
   kept off the overview widget, listed as a compact "Also:" line on
   /changelog. Omit for everything in between.
 
+A title may be quoted or not — `title: 'Fixed: the thing'` and
+`title: Fixed: the thing` both read as the same headline. Quote it if it
+contains a `"`, and use single quotes when you do.
+
 The vocabulary above is `CHANGELOG_SCHEMA` in `src/lib/changelog.ts`; the
 parser is `sveltekit-commons/changelog`, shared with the UAR site. An entry
 naming a `type` or `area` that is not on those lists does not fail the build —
-it falls back to the first one — so the lists are the thing to keep honest.
+it falls back to the first one — so `npm run changelog:check` is what keeps the
+lists honest. `npm test` runs it too, so CI will not let a misfiled entry
+through, but run it yourself after writing one.
