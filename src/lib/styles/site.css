@@ -4,8 +4,85 @@
  * .mono and .visually-hidden — comes from sveltekit-commons/base.css.
  */
 
-/* Item icons are pixel art upscaled from small sources — smoothing turns them
-   to mush, so they render nearest-neighbour everywhere. */
-.icon {
+/*
+ * ITEM ICONS
+ *
+ * Pixel art upscaled from small sources — smoothing turns them to mush, so they
+ * render nearest-neighbour everywhere.
+ *
+ * They also sit on a plate, and that is not decoration. EXBO draws item art as
+ * dark silhouettes meant to be read DARK-ON-LIGHT: in game they sit in an
+ * inventory cell sampled at #464e31…#706c59 (`stalker/textures/gui/inventory`),
+ * luminance 74–107. Dropped straight onto this site's dark surface (luminance
+ * 29) the art is backwards, and measurably so — across 395 sampled icons the
+ * median opaque luminance is 60, 26% of icons have most of their pixels below
+ * 48, and 30 of them are literally darker than the surface they are drawn on.
+ * A typical dark icon scored 1.0–1.5:1 against --surface, which is not "low
+ * contrast", it is invisible.
+ *
+ * So every icon gets the cell the game gives it. The trade is deliberate: a
+ * bright icon drops from about 8:1 to 3:1, which is still comfortable at 24–48px,
+ * while the dark ones go from 1.0:1 to 2.6–2.9:1 and become visible at all.
+ *
+ * Global rather than per-component on purpose. Every call site already tags item
+ * art with `.icon` — the tree cards, the lists, the recipe rows, the search hits
+ * — so one rule keeps them identical, the same way `image-rendering` already
+ * does. `.portrait` is the same art inside commons' FactsCard, which scoped
+ * styles cannot reach.
+ */
+.icon,
+.portrait {
 	image-rendering: pixelated;
+	/*
+	 * Slightly translucent, so the cell settles into the card instead of sitting
+	 * on it as a slab. `--icon-plate-alpha` is the dial, and it is a real trade
+	 * rather than taste — measured against the sampled icon set:
+	 *
+	 *   alpha   blended    dark icon   median icon   bright icon
+	 *    100%   #5a6147        2.57x         1.71x         3.10x
+	 *     85%   #515740        2.21x         1.47x         3.60x   ← here
+	 *     72%   #484f39        1.94x         1.29x         4.11x
+	 *     60%   #414733        1.72x         1.14x         4.64x
+	 *
+	 * The MEDIAN icon is the binding case, not the darkest one: it starts at
+	 * only 1.71x, so every point of transparency costs more than it looks like
+	 * it should, and below about 85% it slides back toward the invisibility this
+	 * plate exists to fix. 85% still blends to #515740, inside the game's own
+	 * slot range (#464e31…#706c59).
+	 */
+	background: var(--icon-cell);
+	border-radius: var(--radius-1);
+	/* The plate is flush with the icon's box — no gap around it, it IS the cell.
+	   The breathing room goes inside instead: padding shrinks the content box
+	   (the reset sets border-box) so the art is inset while the plate still
+	   fills the slot, which is how an inventory cell reads. */
+	padding: 2px;
+}
+
+/* The nav rail is the exception: at 18px, collapsed to a strip of icons, a
+   plate each reads as a column of buttons rather than a list of groups. */
+:where(nav) .icon {
+	background: none;
+}
+
+/*
+ * NAV EDGE
+ *
+ * The shell separates the rail from the content by surface alone — both are
+ * flat, the rail just sits a shade darker. That held while the content started
+ * with a margin of page background, and stopped holding when the entity page
+ * grew a bar of its own: that bar takes the same --surface-sunken as the rail
+ * and the header, so rail and bar now meet with nothing between them and read
+ * as one L-shaped slab.
+ *
+ * Set here rather than in sveltekit-commons because commons is a shared package
+ * — UAR renders the same shell and has no bar to collide with, so this is
+ * STALZONE's problem and STALZONE's fix. If UAR ever wants it too, the right
+ * move is a --side-border custom property in the shell, not this rule copied.
+ *
+ * Three levels deep to clear the component's own scoped `.sidebar` (0,2,0);
+ * a plain `.sidebar` would tie on specificity and be settled by bundle order.
+ */
+.shell > .body > .sidebar {
+	border-right: var(--border-width) solid var(--border);
 }

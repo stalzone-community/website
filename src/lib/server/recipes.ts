@@ -15,6 +15,15 @@ const data = raw as unknown as RecipeData;
 
 export const perks = data.perks;
 
+/** The flat offer table. Exported for $lib/server/tech-tree, which reads the
+ *  whole thing once at boot rather than per item — the indexes below answer
+ *  "this item", the tech tree asks "every edge". */
+export const barter = data.barter;
+
+/** Likewise for $lib/server/craft-tree: a rooted craft graph walks the whole
+ *  table by recipe index, which the id-keyed indexes below cannot express. */
+export const hideout = data.hideout;
+
 function index<T>(rows: T[], keys: (row: T) => string[]): Map<string, T[]> {
 	const m = new Map<string, T[]>();
 	for (const row of rows) {
@@ -54,8 +63,23 @@ export function tradedFor(id: string): BarterRecipe[] {
 	return demandedBy.get(id) ?? [];
 }
 
-/** True when an item participates in any recipe at all — lets a page skip the
- *  whole panel without four lookups. */
-export function hasRecipes(id: string): boolean {
-	return producedBy.has(id) || consumedBy.has(id) || offeredAs.has(id) || demandedBy.has(id);
+/**
+ * Whether an item has anything to say on each of the two tabs.
+ *
+ * These are two questions, not one, and the split is the whole point: a bench
+ * and a trader are two different ways to end up holding the same item, and a
+ * player is usually choosing between them. Only 19 items in the catalogue offer
+ * both, so one combined answer would put a tab on 993 pages that could speak to
+ * a third of them.
+ *
+ * Each covers both directions through its own table, which is what its tab
+ * shows: crafting is "made at a bench" and "goes into one", trading is "a
+ * trader sells it" and "a trader takes it as payment".
+ */
+export function hasCrafting(id: string): boolean {
+	return producedBy.has(id) || consumedBy.has(id);
+}
+
+export function hasTrading(id: string): boolean {
+	return offeredAs.has(id) || demandedBy.has(id);
 }

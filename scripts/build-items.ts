@@ -70,6 +70,35 @@ function localized(t: unknown): Localized {
 }
 
 /**
+ * Upstream's `value` is not always signed the way upstream itself prints it.
+ *
+ * A sight that speeds your aim carries `value: 20` and `formatted: "-20%"` —
+ * the number is the magnitude of a *time reduction*, and the minus lives only
+ * in the rendered string. Store the raw value and the page says a scope makes
+ * you 20% slower to aim, which is backwards.
+ *
+ * Two stats are inverted every single time they appear:
+ *
+ *   weapon.stat_factor.aim_switch_time   96 of 96
+ *   weapon.stat_factor.draw_time         83 of 83
+ *
+ * and `reload_modifier` disagrees on 3 of its 4 374. Rather than special-case
+ * three keys and re-check them each patch, take the sign from the string the
+ * game itself shows: it is the one thing guaranteed to match what a player
+ * reads in-game. The magnitude still comes from `value`, which carries the
+ * precision the string has rounded away.
+ */
+function signedValue(value: number, formatted: unknown): number {
+	const en = (formatted as { value?: Record<string, string> })?.value?.en;
+	if (typeof en !== 'string') return value;
+	const shown = en.trim();
+	// only an explicit sign is evidence; "0.38 kg" says nothing either way
+	if (shown.startsWith('-')) return -Math.abs(value);
+	if (shown.startsWith('+')) return Math.abs(value);
+	return value;
+}
+
+/**
  * Learn the display unit from upstream's own formatted string: "1 kg" → "kg",
  * "+13.09%" → "%", "[+13.09%; +15.4%]" → "%". Cheaper and more faithful than
  * hand-maintaining a unit table for 161 stats.
@@ -109,9 +138,32 @@ function noteStat(slug: string, key: string, label: unknown, formatted: unknown)
 	return m;
 }
 
+/**
+ * The armour upgrade block, present only on `_variants/<id>/<n>.json`.
+ *
+ * It repeats a stat the item already carries — under the SAME key — but with the
+ * upgrade's *bonus* rather than the upgraded value. On the Bandit Suit at level 1
+ * the main block says `bullet_dmg_factor = 40.27` and this one says `1.27`; it
+ * sorts last, so extracting it overwrote the real number with the delta, and at
+ * level 15 the delta happened to equal the level-0 value (39), which the
+ * differs-from-base filter in `loadVariants` then dropped entirely.
+ *
+ * The bonus is `variant − base`, so nothing is lost by skipping it. Verified
+ * across the database: no armour upgrade block carries a key that appears
+ * nowhere else in the same file.
+ *
+ * The weapon block of the same name is NOT skipped. Its keys live in the
+ * `weapon.stat_factor` namespace (slug prefix `upg_`), appear in no other block,
+ * and are the only source of the upgrade factors — real information, not a
+ * duplicate.
+ */
+const ARMOR_UPGRADE_BLOCK = 'stalker.tooltip.armor_artefact.info.upgrade_stats';
+
 interface Extracted {
 	stats: Record<string, number>;
 	enums: Record<string, string>;
+	/** key-value stats whose value is a literal string — see Item.values */
+	values: Record<string, string>;
 	ranges: Record<string, StatRange>;
 	damage: DamageRamp | null;
 	refs: string[];
@@ -125,6 +177,7 @@ function extract(item: any): Extracted {
 	const out: Extracted = {
 		stats: {},
 		enums: {},
+		values: {},
 		ranges: {},
 		damage: null,
 		refs: [],
@@ -141,7 +194,7 @@ function extract(item: any): Extracted {
 				if (!isTr(el.name) || typeof el.value !== 'number') break;
 				const slug = slugFor(el.name.key);
 				noteStat(slug, el.name.key, el.name, el.formatted);
-				out.stats[slug] = el.value;
+				out.stats[slug] = signedValue(el.value, el.formatted);
 				seenSlugs.add(slug);
 				break;
 			}
@@ -161,6 +214,13 @@ function extract(item: any): Extracted {
 				if (isTr(el.value)) {
 					out.enums[slug] = el.value.key;
 					if (!enumLabels.has(el.value.key)) enumLabels.set(el.value.key, localized(el.value));
+				} else if (el.value?.type === 'text' && typeof el.value.text === 'string') {
+					// Not every key-value carries a translation. A sight's magnification
+					// is the literal "x1.00, x1.50", an artefact's freshness is "III" —
+					// numerals, so upstream ships them untranslated. Without this branch
+					// `noteStat` still counted them into the dictionary (sight_zoom said
+					// 34 items) while the value itself went nowhere.
+					out.values[slug] = el.value.text;
 				}
 				break;
 			}
@@ -186,6 +246,7 @@ function extract(item: any): Extracted {
 	};
 
 	for (const b of item.infoBlocks ?? []) {
+		if (isTr(b?.title) && b.title.key === ARMOR_UPGRADE_BLOCK) continue;
 		if (b?.type === 'damage') {
 			out.damage = {
 				startDamage: b.startDamage,
@@ -294,6 +355,7 @@ for (const entry of listing) {
 		unresolvedRefs: [],
 		usedInCrafts: ex.usedInCrafts,
 		texts: ex.texts,
+		values: ex.values,
 		variants
 	});
 
@@ -355,15 +417,54 @@ const db: ItemDatabase = {
 mkdirSync(OUT, { recursive: true });
 writeFileSync(join(OUT, 'items.json'), JSON.stringify(db));
 
-/** Small payload for client-side search: no stats, no variants. */
-const index = items.map((i) => ({
-	id: i.id,
-	n: i.name,
-	c: i.category,
-	r: i.rank,
-	ic: i.icon
-}));
-writeFileSync(join(OUT, 'search-index.json'), JSON.stringify(index));
+/*
+ * Client-side search index, one file per language.
+ *
+ * A single index carrying all five languages was 530 KB, and every visitor
+ * downloaded four they cannot read. Split, each is a fifth of that and only the
+ * chosen one is ever fetched. It goes to static/ rather than src/lib/data so it
+ * stays a plain file the browser fetches once and caches, instead of a JS chunk
+ * rebuilt into the bundle.
+ *
+ * `s` is the English name, carried on the non-English indexes only. Item names
+ * here are largely real weapon designations, so a French or Korean player
+ * searching "RPL-20" should still find it — without that field a per-language
+ * index would have quietly dropped the cross-language matching the combined one
+ * had. It is omitted where it would only repeat `n`.
+ *
+ * The icon path is NOT stored: every one of them is `/icons/{c}/{id}.png`,
+ * checked here rather than assumed, so storing it repeated the two fields
+ * either side of it 2 311 times for 83 KB. `ni` marks the handful of items
+ * that have no icon at all; the client derives the rest.
+ */
+const SEARCH_OUT = join(ROOT, 'static', 'search');
+mkdirSync(SEARCH_OUT, { recursive: true });
+
+// the assumption the `ic` field was dropped on, verified rather than trusted
+const oddIcons = items.filter((i) => i.icon && i.icon !== `/icons/${i.category}/${i.id}.png`);
+if (oddIcons.length) {
+	throw new Error(
+		`${oddIcons.length} icon paths are not /icons/{category}/{id}.png ` +
+			`(e.g. ${oddIcons[0].id} -> ${oddIcons[0].icon}). The search index derives them; ` +
+			`store the path again, or handle the exception.`
+	);
+}
+
+for (const lang of LANGS) {
+	const index = items.map((i) => {
+		const en = i.name.en ?? i.id;
+		const n = i.name[lang] ?? en;
+		return {
+			id: i.id,
+			n,
+			...(lang !== 'en' && n !== en ? { s: en } : {}),
+			c: i.category,
+			r: i.rank,
+			...(i.icon ? {} : { ni: 1 })
+		};
+	});
+	writeFileSync(join(SEARCH_OUT, `${lang}.json`), JSON.stringify(index));
+}
 
 // ── manifest: the committed fingerprint of a build ──────────────────────────
 // items.json is too big to commit, so this small file is what git remembers.
@@ -429,11 +530,15 @@ for (const it of items) {
 }
 
 const kb = (p: string) => `${(statSync(join(OUT, p)).size / 1024).toFixed(0)} KB`;
+const searchKb = LANGS.map(
+	(l) => `${l} ${(statSync(join(SEARCH_OUT, `${l}.json`)).size / 1024).toFixed(0)}`
+).join(', ');
 const withVariants = items.filter((i) => i.variants.length).length;
 
 console.log(`[build] realm ${realm} @ ${source.sha.slice(0, 8)} (${source.committedAt})`);
 console.log(`[build] ${items.length} items — ${withVariants} with upgrade levels, ${items.length - withVariants} without`);
 console.log(`[build] ${statMeta.size} stats, ${enumLabels.size} enum values`);
 console.log(`[build] refs: ${resolved} resolved, ${unresolved} unresolved; ${missingIcons} items without an icon`);
-console.log(`[build] items.json ${kb('items.json')}   search-index.json ${kb('search-index.json')}`);
+console.log(`[build] items.json ${kb('items.json')}`);
+console.log(`[build] search index per language (KB): ${searchKb}`);
 console.log(`[build] ${copied} icons copied to static/icons/`);

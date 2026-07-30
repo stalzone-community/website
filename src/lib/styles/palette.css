@@ -10,41 +10,213 @@
  */
 
 :root {
+	/* ── type ─────────────────────────────────────────────────────────
+	   The contract falls back to system-ui, which is why this site read as
+	   unstyled next to UAR. Same two faces as UAR: Inter for text, JetBrains
+	   Mono for anything that lines up in a column — stats, prices, ids. The
+	   files are loaded by the layout; naming a family here does not fetch it. */
+	--font-sans: 'Inter Variable', Inter, system-ui, sans-serif;
+	--font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+
 	/* ── dark: the default, because it is a Zone game ─────────────────── */
-	--bg: #14150f;
-	--surface: #1c1e15;
-	--surface-raised: #24271b;
-	--surface-sunken: #101109;
-	--border: #34382a;
-	--border-strong: #4a4f3b;
+	--bg: #14170f;
+	--surface: #1b1f16;
+	--surface-raised: #23281c;
+	--surface-sunken: #101309;
+	--border: #2d3324;
+	--border-strong: #454d38;
 
-	--text: #ded9c8;
-	--text-dim: #9a9884;
-	--text-faint: #6b6a5c;
+	--text: #e2e0d1;
+	--text-dim: #a3a891;
+	--text-faint: #757b65;
 
-	/* hazard green — the Zone's signature, used sparingly */
-	--accent: #9fd356;
-	--accent-dim: #6f9a33;
-	--accent-contrast: #14150f;
+	/* UAR's green, shared verbatim so the two sites read as one family
+	   (uar-shared/src/palette.css). Muted olive rather than hazard green: it
+	   has to sit under body text without shouting. */
+	--accent: #8db566;
+	--accent-dim: #a0c77c;
+	--accent-contrast: #131608;
+	--accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
 
-	--danger: #d3564f;
-	--warn: #d39b4f;
-	--ok: #6fae5c;
+	--danger: #d97f61;
+	--warn: #cfa95c;
+	--ok: #8db566;
+
+	/* The account pill, the way UAR gives Battle.net its own --mos. A sign-in
+	   button belongs to the service it signs you into, so it does not follow
+	   the accent — and it must not be mistaken for one of the rank or faction
+	   bands, which is why it is the one cool colour in a warm palette. */
+	--exbo: #4a6f8c;
 
 	/* The contract's shadows are tuned for a light skin. On near-black
 	   surfaces a 0.08 shadow is invisible, so both go heavier. */
 	--shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
 	--shadow-2: 0 2px 10px rgb(0 0 0 / 0.5);
 
-	/* rank bands — mapped from the game's own RANK_* colours. STALZONE-only,
-	   which is why they are here and not in the contract. */
+	/* Rank bands, read off the game's own dropped-item beams
+	   (`stalker/models/dropped_tooltip/stick_<RANK>.ol`, decoded with sc-file).
+	   The beams are pure glow colours meant for a 3D scene, so each hue is kept
+	   and the saturation pulled back to something a 3px border and a label can
+	   carry on both skins:
+
+	     PICKLOCK #bdc2bd   NEWBIE #00ff10   STALKER #393cff
+	     VETERAN  #de00c5   MASTER #ff4041   LEGEND  #ffff10
+
+	   Guessing these is exactly the trap: the plausible-looking ramp
+	   (grey→green→blue→purple→gold) is the real one shifted a tier, which
+	   renders every Master item in the Veteran colour. */
 	--rank-default: #8a8a80;
-	--rank-newbie: #b8b8ae;
-	--rank-stalker: #6fae5c;
-	--rank-veteran: #4f93d3;
-	--rank-master: #a86fd3;
-	--rank-legend: #d3a84f;
-	--rank-quest_item: #d3564f;
+	--rank-newbie: #5ec46a;
+	--rank-stalker: #6b7bf0;
+	--rank-veteran: #cf5cbe;
+	--rank-master: #e8524f;
+	--rank-legend: #ded04a;
+	--rank-quest_item: #d39b4f;
+
+	/* faction marks — the hues of the game's own emblems (see $lib/factions).
+	   They deliberately sit a step brighter than the rank bands above: the two
+	   appear on the same card, and the rank is a wide border while a faction is
+	   a 14px glyph that has to survive being small. */
+	--faction-frontier: #d0574f;
+	--faction-rise: #79bd5c;
+	--faction-mercenaries: #5f9cd8;
+	--faction-covenant: #b07ada;
+	--faction-north: #d8ae55;
+
+	/* ── stat marks ────────────────────────────────────────────────────
+	   Ten tints for the 99 glyphs in $lib/stat-icons — ten rather than 98 on
+	   purpose. The shape says which stat; the hue says which KIND of harm or
+	   capacity the row is about, which is a second channel the label does not
+	   already carry. A colour per stat would be a rainbow on a suit's
+	   eighteen-row effects table and would say nothing.
+
+	   Authored, not decoded. The rank bands above came out of the game's own
+	   files; there is no equivalent for a damage type — `grep -i color` over
+	   vendor/stalzone-database turns up the rank enum and nothing else. So these
+	   are measured rather than sourced: every one clears 3:1 against --surface,
+	   --surface-raised and --surface-sunken on both skins, and no two within 20°
+	   of hue sit within 30 points of saturation.
+
+	   They are deliberately of equal lightness — these are peers, not a ranking
+	   — which does leave hue as the only separator. That is why a mark is never
+	   the only thing a row says: it is aria-hidden, and its label is always
+	   beside it.
+
+	     trauma          0°  blood, cuts, bullets — harm dealt and harm taken
+	     heat           26°  fire, temperature, blast
+	     gear           41°  worth, wear, and how much charge is left
+	     contamination  64°  radiological, biological, chemical
+	     vital          90°  your body — health, stamina, speed
+	     feed          165°  the ammunition cycle — magazine, reload, rate of fire
+	     cryo          193°  cold
+	     handling      207°  how a weapon behaves; the near-grey default
+	     energy        234°  electricity, and the devices that sense it
+	     psi           288°  psy-emission
+
+	   `--stat-vital` is the site accent by reference, not by copy: your body's
+	   capacity is the thing this palette already calls good, and the reference
+	   means it follows the accent into the light skin without being restated. */
+	--stat-trauma: #dd6f6f;
+	--stat-heat: #e28a45;
+	--stat-gear: #bfa877;
+	--stat-contamination: #ccd63f;
+	--stat-vital: var(--accent);
+	--stat-feed: #4fc0a4;
+	--stat-cryo: #5fbcd6;
+	--stat-handling: #8aa3b8;
+	--stat-energy: #8a92e0;
+	--stat-psi: #c07ad2;
+
+	/* ── profession marks ──────────────────────────────────────────────
+	   One hue per crafting perk — the eight professions in $lib/craft-icons.
+
+	   Authored, like the stat marks above and for the same reason: the perk
+	   records upstream carry `id`, `name` and `desc` and nothing else, and
+	   `global/icons/` holds item art only. There is no colour or glyph to
+	   decode, so both are ours.
+
+	   Eight hues for eight professions, which a rainbow of 98 stats could not
+	   afford but this can. The shape still leads — these read at 18px in a
+	   craft-tree join, where a tint is what tells you the chain switched from a
+	   workbench to a stove without you reading anything. */
+	--perk-materials: #a89a80;
+	--perk-engineering: #6f9fd0;
+	--perk-cooking: #e8873a;
+	--perk-ammunition: #c2a13f;
+	--perk-medicine: #5ec49a;
+	--perk-brewing: #b47ad2;
+	--perk-pyrotechnics: #e2554f;
+	--perk-armorer: #7f8f9e;
+
+	/* ── changelog entry kinds ────────────────────────────────────────
+	   One per `type` in CHANGELOG_SCHEMA ($lib/changelog), read by name by
+	   commons' ChangeChip: `var(--change-<type>)`.
+
+	   By reference, not by value — these are four hues this palette has already
+	   measured, and referencing them means the light skin follows without any of
+	   it being restated, exactly as --stat-vital does with the accent. Adding a
+	   fifth entry type means adding a line here, or the chip renders neutral. */
+	--change-feature: var(--accent);
+	--change-improvement: var(--stat-cryo);
+	--change-fix: var(--stat-trauma);
+	--change-data: var(--stat-gear);
+
+	/* ── item category marks ──────────────────────────────────────────
+	   One hue per top-level `group`, for the fourteen glyphs in
+	   $lib/group-icons. The rail on the overview is a grid of categories and
+	   nothing else; without a tint it is fourteen identical outlines and the
+	   only thing telling weapons from medicine is reading the word.
+
+	   Authored, like the stat and perk marks above and for the same reason:
+	   upstream ships per-item art under `icons/<group>/<id>.png` and nothing at
+	   the group level, and no colour anywhere. Held to the same two rules —
+	   every one clears 3:1 against --surface, --surface-raised and
+	   --surface-sunken on both skins (worst case here is 4.21:1), and no two
+	   within 20° of hue sit within 30 points of saturation.
+
+	   The order below is the wheel, not the alphabet, which is what makes that
+	   second rule checkable by eye when a fifteenth group arrives:
+
+	     weapon           0°  harm dealt — the same red as --stat-trauma
+	     grenade         22°  blast
+	     backpacks       33°  leather; desaturated, so it is not a second orange
+	     bullet          47°  brass
+	     misc            68°  the odds and ends
+	     other           80°  the catch-all — a true neutral, hue is nominal
+	     supply          90°  food and drink, the accent's own hue
+	     medicine       157°
+	     containers     182°
+	     attachment     203°  optics
+	     armor          214°  plate; desaturated against attachment
+	     weapon_modules 234°  mechanism
+	     device         262°  electronics
+	     artefact       288°  anomalous — the psy hue
+
+	   The mark is never the only thing a tile says: the glyph is aria-hidden and
+	   the category name is always beside it. */
+	--group-weapon: #dd6e6e;
+	--group-grenade: #e3824a;
+	--group-backpacks: #ad9476;
+	--group-bullet: #d0b243;
+	--group-misc: #b3bf69;
+	--group-other: #949494;
+	--group-supply: #8cb464;
+	--group-medicine: #5dc69e;
+	--group-containers: #52b3b7;
+	--group-attachment: #6daad0;
+	--group-armor: #909eb2;
+	--group-weapon_modules: #8a93e0;
+	--group-device: #a684e1;
+	--group-artefact: #c178d3;
+
+	/* The cell an item icon sits in — the midpoint of the game's own inventory
+	   slot, pulled toward this palette's olive. It is far lighter than every
+	   other surface here, and has to be: see the note in site.css. */
+	--icon-plate: #5a6147;
+	--icon-plate-alpha: 85%;
+	/* the composed value — anything drawing an icon cell uses this, so the two
+	   knobs above stay the only place the plate is decided */
+	--icon-cell: color-mix(in srgb, var(--icon-plate) var(--icon-plate-alpha), transparent);
 }
 
 /*
@@ -58,59 +230,175 @@
  */
 @media (prefers-color-scheme: light) {
 	:root:not([data-theme='dark']) {
-		--bg: #f2f1e8;
-		--surface: #ffffff;
-		--surface-raised: #fbfaf3;
-		--surface-sunken: #e6e5da;
-		--border: #d2d1c2;
-		--border-strong: #b3b2a2;
+		--bg: #f1efe8;
+		--surface: #faf9f4;
+		--surface-raised: #eae7dc;
+		--surface-sunken: #e5e1d3;
+		--border: #ddd8c9;
+		--border-strong: #b9b3a0;
 
-		--text: #23241b;
-		--text-dim: #5c5d50;
-		--text-faint: #86877a;
+		--text: #23271c;
+		--text-dim: #5c6151;
+		--text-faint: #8d927f;
 
-		--accent: #5c7d24;
-		--accent-dim: #7fa53c;
-		--accent-contrast: #ffffff;
+		--accent: #52713d;
+		--accent-dim: #46612f;
+		--accent-contrast: #fff;
+		--accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+
+		--exbo: #3a5a75;
 
 		--shadow-1: 0 1px 2px rgb(30 32 24 / 0.08);
 		--shadow-2: 0 2px 10px rgb(30 32 24 / 0.12);
 
 		--rank-default: #6f6f66;
-		--rank-newbie: #77776d;
-		--rank-stalker: #43813a;
-		--rank-veteran: #2c6ba8;
-		--rank-master: #7a41a8;
-		--rank-legend: #9a7411;
-		--rank-quest_item: #a83c36;
+		--rank-newbie: #2f7a3a;
+		--rank-stalker: #3a45c4;
+		--rank-veteran: #a12b90;
+		--rank-master: #c0322e;
+		--rank-legend: #8a7b0e;
+		--rank-quest_item: #a06a15;
+
+		/* darkened for the light skin, where the emblem hues glare */
+		--faction-frontier: #b23c34;
+		--faction-rise: #4a8438;
+		--faction-mercenaries: #2f6ba8;
+		--faction-covenant: #7b45a8;
+		--faction-north: #96701c;
+
+		/* Same ten hues, taken down for a #faf9f4 surface — measured against
+		   --surface-sunken (#e5e1d3), which is the binding case here rather than
+		   --surface-raised. --stat-vital is absent because it references
+		   --accent, which the block above already re-declared. */
+		--stat-trauma: #a63a3a;
+		--stat-heat: #a05a12;
+		--stat-gear: #7a6432;
+		--stat-contamination: #6d7810;
+		--stat-feed: #166b58;
+		--stat-cryo: #1f647c;
+		/* The same eight, taken down for the light skin — measured against
+		   --surface-sunken, which is what a join card sits on. */
+		--perk-materials: #6b6152;
+		--perk-engineering: #2f5f96;
+		--perk-cooking: #a85a12;
+		--perk-ammunition: #7d6614;
+		--perk-medicine: #16785c;
+		--perk-brewing: #7a3fa0;
+		--perk-pyrotechnics: #b8302b;
+		--perk-armorer: #4a5a68;
+
+		/* The same fourteen hues, taken down for the light skin — measured
+		   against --surface-sunken, which is what a category tile sits on. */
+		--group-weapon: #a12b2b;
+		--group-grenade: #9e4a1a;
+		--group-backpacks: #6d5940;
+		--group-bullet: #7c671d;
+		--group-misc: #626a29;
+		--group-other: #545454;
+		--group-supply: #4d6534;
+		--group-medicine: #1c6e4e;
+		--group-containers: #19696b;
+		--group-attachment: #255f83;
+		--group-armor: #4b5a6c;
+		--group-weapon_modules: #3843a8;
+		--group-device: #6339ac;
+		--group-artefact: #893a9c;
+
+		--stat-handling: #4b6270;
+		--stat-energy: #4a4ba8;
+		--stat-psi: #8b3d9e;
+
+		/* The light skin already renders dark art on a light surface, which is
+		   the way round the art was drawn — so the cell only has to delineate
+		   the slot, not rescue it. */
+		--icon-plate: #e4e0d1;
+		--icon-plate-alpha: 85%;
 	}
 }
 
 /* The theme toggle stamps data-theme on the root; it must win both ways. */
 :root[data-theme='light'] {
-	--bg: #f2f1e8;
-	--surface: #ffffff;
-	--surface-raised: #fbfaf3;
-	--surface-sunken: #e6e5da;
-	--border: #d2d1c2;
-	--border-strong: #b3b2a2;
+	--bg: #f1efe8;
+	--surface: #faf9f4;
+	--surface-raised: #eae7dc;
+	--surface-sunken: #e5e1d3;
+	--border: #ddd8c9;
+	--border-strong: #b9b3a0;
 
-	--text: #23241b;
-	--text-dim: #5c5d50;
-	--text-faint: #86877a;
+	--text: #23271c;
+	--text-dim: #5c6151;
+	--text-faint: #8d927f;
 
-	--accent: #5c7d24;
-	--accent-dim: #7fa53c;
-	--accent-contrast: #ffffff;
+	--accent: #52713d;
+	--accent-dim: #46612f;
+	--accent-contrast: #fff;
+	--accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+
+	--exbo: #3a5a75;
 
 	--shadow-1: 0 1px 2px rgb(30 32 24 / 0.08);
 	--shadow-2: 0 2px 10px rgb(30 32 24 / 0.12);
 
 	--rank-default: #6f6f66;
-	--rank-newbie: #77776d;
-	--rank-stalker: #43813a;
-	--rank-veteran: #2c6ba8;
-	--rank-master: #7a41a8;
-	--rank-legend: #9a7411;
-	--rank-quest_item: #a83c36;
+	--rank-newbie: #2f7a3a;
+	--rank-stalker: #3a45c4;
+	--rank-veteran: #a12b90;
+	--rank-master: #c0322e;
+	--rank-legend: #8a7b0e;
+	--rank-quest_item: #a06a15;
+
+	/* darkened for the light skin, where the emblem hues glare */
+	--faction-frontier: #b23c34;
+	--faction-rise: #4a8438;
+	--faction-mercenaries: #2f6ba8;
+	--faction-covenant: #7b45a8;
+	--faction-north: #96701c;
+
+	/* Same ten hues, taken down for a #faf9f4 surface — measured against
+	   --surface-sunken (#e5e1d3), which is the binding case here rather than
+	   --surface-raised. --stat-vital is absent because it references
+	   --accent, which the block above already re-declared. */
+	--stat-trauma: #a63a3a;
+	--stat-heat: #a05a12;
+	--stat-gear: #7a6432;
+	--stat-contamination: #6d7810;
+	--stat-feed: #166b58;
+	--stat-cryo: #1f647c;
+	/* The same eight, taken down for the light skin — measured against
+	   --surface-sunken, which is what a join card sits on. */
+	--perk-materials: #6b6152;
+	--perk-engineering: #2f5f96;
+	--perk-cooking: #a85a12;
+	--perk-ammunition: #7d6614;
+	--perk-medicine: #16785c;
+	--perk-brewing: #7a3fa0;
+	--perk-pyrotechnics: #b8302b;
+	--perk-armorer: #4a5a68;
+
+	/* The same fourteen hues, taken down for the light skin — measured
+	   against --surface-sunken, which is what a category tile sits on. */
+	--group-weapon: #a12b2b;
+	--group-grenade: #9e4a1a;
+	--group-backpacks: #6d5940;
+	--group-bullet: #7c671d;
+	--group-misc: #626a29;
+	--group-other: #545454;
+	--group-supply: #4d6534;
+	--group-medicine: #1c6e4e;
+	--group-containers: #19696b;
+	--group-attachment: #255f83;
+	--group-armor: #4b5a6c;
+	--group-weapon_modules: #3843a8;
+	--group-device: #6339ac;
+	--group-artefact: #893a9c;
+
+	--stat-handling: #4b6270;
+	--stat-energy: #4a4ba8;
+	--stat-psi: #8b3d9e;
+
+	/* The light skin already renders dark art on a light surface, which is
+	   the way round the art was drawn — so the cell only has to delineate
+	   the slot, not rescue it. */
+	--icon-plate: #e4e0d1;
+	--icon-plate-alpha: 85%;
 }

@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { getGroup, groupNames } from '$lib/server/catalogue';
+import { slugFor } from '$lib/server/entities';
 import { compareItems, facetsOf } from '$lib/items';
 import { toListItem } from '$lib/types';
 import type { EntryGenerator } from './$types.ts';
@@ -16,7 +17,9 @@ export function load({ params }) {
 		// projected, not the full items: this page renders a name and an icon,
 		// and the payload is embedded in the prerendered HTML. Sending whole
 		// items (variants, compatibility, stats) made this document 2.4 MB.
-		items: [...rows].sort((a, b) => compareItems(a, b, 'name', 1, 'en')).map(toListItem),
+		items: [...rows]
+			.sort((a, b) => compareItems(a, b, 'name', 1, 'en'))
+			.map((i) => toListItem(i, slugFor(i.id))),
 		facets: facetsOf(rows)
 	};
 }

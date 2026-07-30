@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="STALZONE">
+	<!--
+		Source of truth for the PNGs beside it (icon-192, icon-512,
+		apple-touch-icon), and the favicon in its own right.
+
+		The wordmark is the same "SZ" the site header uses, but as outlines rather
+		than <text>: an SVG favicon is rendered by the visitor's browser with the
+		visitor's fonts, so a <text> mark is a different mark on every machine.
+		These are DejaVu Sans Mono Bold glyphs, scaled to 300px of the 512 box and
+		centred on the cap height.
+
+		Everything sits inside the maskable safe circle (radius 204 about the
+		centre), so Android can crop it to any shape without clipping the mark.
+	-->
+	<rect width="512" height="512" fill="#9fd356" />
+	<g fill="#14150f">
+		<path
+			transform="translate(106 346.82) scale(0.12165 -0.12165)"
+			d="M510 655Q287 740 208.0 833.5Q129 927 129 1085Q129 1288 259.0 1404.0Q389 1520 616 1520Q719 1520 822.0 1496.5Q925 1473 1026 1427V1139Q931 1206 833.0 1241.0Q735 1276 639 1276Q532 1276 475.0 1233.0Q418 1190 418 1110Q418 1048 459.5 1007.5Q501 967 633 918L760 870Q940 804 1025.0 695.0Q1110 586 1110 420Q1110 194 976.5 82.5Q843 -29 573 -29Q462 -29 350.5 -2.5Q239 24 135 76V381Q253 297 363.5 256.0Q474 215 582 215Q691 215 751.0 264.5Q811 314 811 403Q811 470 771.0 520.5Q731 571 655 600Z"
+		/>
+		<path
+			transform="translate(256 346.82) scale(0.12165 -0.12165)"
+			d="M137 1493H1147V1249L455 260H1161V0H115V244L786 1233H137Z"
+		/>
+	</g>
+</svg>

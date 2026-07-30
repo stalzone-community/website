@@ -11,7 +11,7 @@
 	let { item, lang = 'en' }: Props = $props();
 </script>
 
-<a class="card" href="/item/{item.id}" style="--rank: var(--rank-{rankSlug(item.rank)})">
+<a class="card" href="/entities/{item.slug}" style="--rank: var(--rank-{rankSlug(item.rank)})">
 	{#if item.icon}
 		<img class="icon" src={item.icon} alt="" width="48" height="48" loading="lazy" />
 	{:else}

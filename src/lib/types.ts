@@ -76,6 +76,20 @@ export interface Item {
 	stats: Record<string, number>;
 	/** enum stats, value is an i18n key resolved through `enumLabels` */
 	enums: Record<string, string>;
+	/**
+	 * Key-value stats whose value upstream is a literal string rather than a
+	 * number or a translation, so neither `stats` nor `enums` can hold them.
+	 * Four exist across the catalogue and every one was being dropped:
+	 *
+	 *   sight_zoom       34  "x2.40" or "x1.00, x1.50" — a sight can have several
+	 *   art_freshness   103  "III"
+	 *   usages_left      68  "5/5"
+	 *   stash_inventory   4  "3 x 3"
+	 *
+	 * Untranslated by nature — they are numerals and roman numerals — so a plain
+	 * string is the whole value, not a `Localized`.
+	 */
+	values: Record<string, string>;
 	/** stats expressed as a band */
 	ranges: Record<string, StatRange>;
 	damage: DamageRamp | null;
@@ -99,6 +113,9 @@ export interface Item {
  */
 export interface ListItem {
 	id: string;
+	/** canonical /entities path segment — carried so a list link is a direct
+	 *  hit rather than a redirect through the bare id */
+	slug: string;
 	name: Localized;
 	category: string;
 	group: string;
@@ -107,9 +124,10 @@ export interface ListItem {
 	icon: string | null;
 }
 
-export function toListItem(i: Item): ListItem {
+export function toListItem(i: Item, slug: string): ListItem {
 	return {
 		id: i.id,
+		slug,
 		name: i.name,
 		category: i.category,
 		group: i.group,

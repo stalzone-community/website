@@ -1,0 +1,25 @@
+{
+	// SvelteKit's generated tsconfig EXCLUDES src/service-worker.ts, because a
+	// service worker has a different set of globals than the app — no `document`,
+	// no `window`, and a `self` that is a ServiceWorkerGlobalScope. Pulling the
+	// webworker lib into the app's project would collide with DOM on half the
+	// shared names, so the worker gets its own tiny project instead and
+	// `npm run check` runs both.
+	//
+	// Vite bundles the file with esbuild, which strips types without checking
+	// them. Without this, the one file that runs when nobody is watching would be
+	// the only unchecked file in the repo.
+	"compilerOptions": {
+		"lib": ["esnext", "webworker"],
+		"types": [],
+		"target": "esnext",
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"noEmit": true,
+		"skipLibCheck": true,
+		"verbatimModuleSyntax": true,
+		"isolatedModules": true
+	},
+	"include": ["src/service-worker.ts"]
+}

@@ -1,0 +1,415 @@
+{
+	"source": "cfd653cde5395e37274d0395a14f0b146867ecac",
+	"groups": [
+		{
+			"gear": "0r3or",
+			"gearName": "STG-44",
+			"via": "exact",
+			"parts": [
+				"pjo5d"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "0rvkk",
+			"gearName": "Trijicon ACOG 2x40 Optical Sight",
+			"via": "substring",
+			"parts": [
+				"gnz45",
+				"z3nzm",
+				"55j5q"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "0rvyy",
+			"gearName": "Viking Tactics UVG Tactical Grip",
+			"via": "substring",
+			"parts": [
+				"21wo5",
+				"342g5",
+				"77dlj"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "1rv51",
+			"gearName": "DOTSAT Collimator Sight",
+			"via": "substring",
+			"parts": [
+				"y4643",
+				"w3y33",
+				"4kjko"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "2od90",
+			"gearName": "Scorpion EVO III",
+			"via": "exact",
+			"parts": [
+				"rj9wy",
+				"006ry",
+				"mrn02",
+				"ol6km"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "2on45",
+			"gearName": "KS-23",
+			"via": "exact",
+			"parts": [
+				"z3nwm",
+				"9dokq",
+				"19y1r",
+				"gnz9n"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "4q0gl",
+			"gearName": "MK47 Mutant",
+			"via": "exact",
+			"parts": [
+				"ol6n5"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "5l1q0",
+			"gearName": "Hector Exoarmor",
+			"via": "override",
+			"parts": [
+				"q0pn4",
+				"y46n3",
+				"w3yl3"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "5lnq4",
+			"gearName": "MG 3",
+			"via": "exact",
+			"parts": [
+				"77do9",
+				"9doqy",
+				"19y02"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "6w6lp",
+			"gearName": "PzB 38",
+			"via": "exact",
+			"parts": [
+				"21wgv"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "7lnj7",
+			"gearName": "SA-58 CTC",
+			"via": "exact",
+			"parts": [
+				"9do1q",
+				"l0o0o",
+				"rj9jy"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "96m4w",
+			"gearName": "QBZ-191 Thunderbird",
+			"via": "exact",
+			"parts": [
+				"rj9pz",
+				"pjoq4",
+				"vn53p"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "dmqk5",
+			"gearName": "AM-17",
+			"via": "exact",
+			"parts": [
+				"kr2np",
+				"q0pj3",
+				"j0w5g",
+				"l0oyo"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "g43rp",
+			"gearName": "JD ZIVCAS 2A Exoarmor",
+			"via": "substring",
+			"parts": [
+				"4kj3j",
+				"342o5",
+				"77dwj"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "g4pwp",
+			"gearName": "New Year FAMAS",
+			"via": "exact",
+			"parts": [
+				"gnzpn",
+				"6ojo0",
+				"9dody"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "j5254",
+			"gearName": "Lantac BMD Flash Hider",
+			"via": "substring",
+			"parts": [
+				"6ojw0",
+				"9do6y",
+				"19yr2"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "j5lm4",
+			"gearName": "Beretta ARX160",
+			"via": "substring",
+			"parts": [
+				"nkon9"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "j5ly4",
+			"gearName": "Bren",
+			"via": "exact",
+			"parts": [
+				"dr96g"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "kn3yv",
+			"gearName": "Rigel Exoarmor",
+			"via": "override",
+			"parts": [
+				"kr2zj",
+				"19yo2",
+				"gnzk5"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "knmdv",
+			"gearName": "Gauss Rifle",
+			"via": "exact",
+			"parts": [
+				"dr952"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "ly3w1",
+			"gearName": "Antares Exoarmor",
+			"via": "exact",
+			"parts": [
+				"mrnyk",
+				"y4600",
+				"w3y0z"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "ly5g1",
+			"gearName": "New Year Glock",
+			"via": "override",
+			"parts": [
+				"z3nok",
+				"z3n3m",
+				"55jyq"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "lylqq",
+			"gearName": "MG-34",
+			"via": "exact",
+			"parts": [
+				"vn507"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "m03w7",
+			"gearName": "ZIVCAS M2-C Exoarmor",
+			"via": "override",
+			"parts": [
+				"77d1j"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "m0k5k",
+			"gearName": "Apogee Optical Sight",
+			"via": "substring",
+			"parts": [
+				"j0wzl"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "m0m5k",
+			"gearName": "Sig Sauer P320",
+			"via": "exact",
+			"parts": [
+				"nko42",
+				"pjo64",
+				"vn5jp",
+				"dr9m2"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "n4md3",
+			"gearName": "HK XM8S",
+			"via": "exact",
+			"parts": [
+				"w3yzz",
+				"ol64m",
+				"nkoj2"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "okjw5",
+			"gearName": "Azimut Optical Sight",
+			"via": "substring",
+			"parts": [
+				"q0p34"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "qj26k",
+			"gearName": "FN SCAR SSR",
+			"via": "exact",
+			"parts": [
+				"55j3o",
+				"4kjoo",
+				"kr26p"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "qj2zk",
+			"gearName": "AA-12",
+			"via": "exact",
+			"parts": [
+				"j0wgl",
+				"q0pq3",
+				"j0wqg"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "qjwj9",
+			"gearName": "Lantac Dragon 7.62 Flash Hider",
+			"via": "substring",
+			"parts": [
+				"kr2rp",
+				"q0p03",
+				"j0w0g"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "rw26v",
+			"gearName": "OTL-03 Karbach",
+			"via": "exact",
+			"parts": [
+				"19y4r",
+				"ol6lm",
+				"nkok2"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "rw2d5",
+			"gearName": "McMillan CS5",
+			"via": "exact",
+			"parts": [
+				"6ojln",
+				"55jlq",
+				"y4633"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "wj4no",
+			"gearName": "Albatross Heavy Assault Armored Exoskeleton",
+			"via": "exact",
+			"parts": [
+				"21wr5"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "wj7nd",
+			"gearName": "RPL-20",
+			"via": "exact",
+			"parts": [
+				"l0o52",
+				"006ly",
+				"mrnq2"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "y3jp0",
+			"gearName": "Sledgehammer",
+			"via": "exact",
+			"parts": [
+				"dr9r2",
+				"21w15",
+				"34245",
+				"77d7j"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "y3q1o",
+			"gearName": "SBA TANK",
+			"via": "exact",
+			"parts": [
+				"y46y0",
+				"l0oko",
+				"rj9my"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "yq90",
+			"gearName": "Chitin Backpack",
+			"via": "exact",
+			"parts": [
+				"342q5"
+			],
+			"boundOnAssembly": true
+		},
+		{
+			"gear": "zz7q9",
+			"gearName": "OTs-14M Surge",
+			"via": "exact",
+			"parts": [
+				"006jk",
+				"6oj90",
+				"9dozy"
+			],
+			"boundOnAssembly": true
+		}
+	]
+}

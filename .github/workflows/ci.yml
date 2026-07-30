@@ -1,0 +1,45 @@
+name: CI
+
+# Type-check, unit tests and a full production build on every push and PR.
+#
+# The build is part of CI and not just of the deploy on purpose: ~2 300 item
+# pages are prerendered at build time, so a dead link or a missing asset is a
+# BUILD failure. Catching it here means a bad tag can never reach Fly —
+# deploy.yml calls this workflow as its gate before it releases anything.
+on:
+  push:
+    branches: ['main']
+  pull_request: {}
+  # lets deploy.yml re-run this exact job set on the tagged commit
+  workflow_call: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+
+      # The item database is never committed (see .gitignore) — every job that
+      # touches the site has to build it first, exactly as the Dockerfile does.
+      - name: Vendor upstream database
+        env:
+          # lifts the unauthenticated 60 req/h API limit; the upstream repo is
+          # public so the default token needs no extra scope
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/vendor-db.ts
+
+      # db:build, not build-items.ts alone: recipes.json and the calculator
+      # index are static imports on the server, so a partial data build fails
+      # at `npm run build` rather than degrading.
+      - run: npm run db:build
+
+      - run: npm run check
+      - run: npm test
+      - run: npm run build

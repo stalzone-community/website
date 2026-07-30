@@ -3,6 +3,29 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+		<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+		<!-- iOS ignores the manifest's icons for the home screen and uses this one;
+		     without it, an installed site gets a screenshot of itself as its icon. -->
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<!-- Required for Add to Home Screen, which on iOS is in turn required
+		     before Web Push works at all. See $lib/push.ts. -->
+		<link rel="manifest" href="/manifest.webmanifest" />
+		<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1efe8" />
+		<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#14170f" />
+
+		<!-- Umami (self-hosted at stats.cedricdessalles.dev). `data-domains` is a
+		     hard allowlist: the tracker sends nothing from localhost or from a
+		     preview host, so dev sessions never pollute the stats. Script and
+		     collect paths are renamed away from the defaults server-side, which
+		     is why this is /insights.js and not /script.js. -->
+		<script
+			defer
+			src="https://stats.cedricdessalles.dev/insights.js"
+			data-website-id="1c844d57-97db-4ada-be14-6993aa15b4df"
+			data-domains="stalzone.cedricdessalles.dev"
+		></script>
+
 		%sveltekit.head%
 		<script>
 			// Theme applied before the first paint — anything later and the page

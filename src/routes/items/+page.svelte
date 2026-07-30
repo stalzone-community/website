@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-	<title>Items — STALZONE database</title>
+	<title>Items — Stalzone</title>
 </svelte:head>
 
 <h1>Items</h1>

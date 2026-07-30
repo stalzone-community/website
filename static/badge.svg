@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Emission">
+	<!--
+		The notification badge, drawn in the Android status bar at roughly 24
+		device pixels and flattened to a silhouette: every non-transparent pixel
+		becomes one flat colour the system picks. So it cannot be the wordmark —
+		two letters at that size are a smudge — and it cannot rely on colour.
+
+		A dot inside a ring: a pulse going out. Two shapes, both far above the
+		resolution floor, unambiguous at any size.
+	-->
+	<circle cx="256" cy="256" r="88" fill="#ffffff" />
+	<circle cx="256" cy="256" r="176" fill="none" stroke="#ffffff" stroke-width="52" />
+</svg>

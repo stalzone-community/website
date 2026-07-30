@@ -1,0 +1,21 @@
+{
+	"resolve": {
+		"Hector Exoskeleton": {
+			"gear": "5l1q0",
+			"why": "the parts say \"Exoskeleton\", the gear is catalogued as \"Hector Exoarmor\""
+		},
+		"Rigel Jumpsuit": {
+			"gear": "kn3yv",
+			"why": "the parts say \"Jumpsuit\", the gear is catalogued as \"Rigel Exoarmor\""
+		},
+		"ZIVCAS M2-C Armored Suit": {
+			"gear": "m03w7",
+			"why": "the parts say \"Armored Suit\", the gear is catalogued as \"ZIVCAS M2-C Exoarmor\""
+		},
+		"New Year Glock 18C": {
+			"gear": "ly5g1",
+			"why": "the parts name the base weapon (Glock 18C), the gear is just \"New Year Glock\""
+		}
+	},
+	"ignore": []
+}

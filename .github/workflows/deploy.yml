@@ -1,0 +1,40 @@
+name: Deploy
+
+# Ships the private Fly app `stalzone-website` on a version tag (vX.Y.Z).
+#
+# Pushing to main does NOT deploy — `npm run release vX.Y.Z` rolls up the
+# changelog, tags and pushes, and the tag is what triggers this.
+#
+# The verify job re-runs the whole of CI against the tagged commit and the
+# deploy waits on it, so a tag can never ship a tree that does not build. (This
+# is not hypothetical: UAR shipped two broken releases when its tag raced CI.)
+#
+# The deploy itself lives in the shared template Geptyro/github-workflows —
+# same one the personal site, the bestiary and UAR use. `bootstrap: true` makes
+# it idempotently create the app and its private Flycast IP, so the first
+# release needs no manual `fly launch`.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-stalzone-website
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: verify
+    uses: Geptyro/github-workflows/.github/workflows/fly-deploy.yml@main
+    with:
+      app: stalzone-website
+      bootstrap: true
+    secrets:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      # MONGODB_URI / VAPID keys / PUBLIC_ORIGIN, dotenv-style. Staged with the
+      # release so a fresh app comes up fully configured from repo + secrets
+      # alone, with no manual `fly secrets set` step to forget.
+      APP_SECRETS: ${{ secrets.APP_SECRETS }}

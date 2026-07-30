@@ -1,0 +1,56 @@
+# Private backend app: the STALZONE item database.
+#
+# There is NO public IP. The only way in is cdd-gateway, which terminates TLS at
+# Fly's edge and reverse-proxies stalzone.cedricdessalles.dev to
+# stalzone-website.flycast:80 over the private WireGuard mesh. The deploy
+# workflow asserts this after every release and releases any public IP a deploy
+# auto-allocated — see Geptyro/github-workflows/.github/workflows/fly-deploy.yml.
+#
+# That is a security property, not a preference: the app trusts x-forwarded-for
+# (below) to identify clients, which is only sound while the gateway is the sole
+# possible source of that header.
+
+app = 'stalzone-website'
+primary_region = 'cdg'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  # /feedback rate-limits by getClientAddress(). Behind the gateway the socket
+  # peer is a Fly proxy, so without this every visitor shares one bucket and the
+  # first spammer locks out the site. ORIGIN is set in the Dockerfile instead —
+  # it is a property of the image (see the comment there), not of the machine.
+  ADDRESS_HEADER = 'x-forwarded-for'
+
+[http_service]
+  # matches ENV PORT=8080 in the Dockerfile
+  internal_port = 8080
+  # The gateway hop is deliberately plain HTTP inside the private mesh; forcing
+  # HTTPS here would redirect-loop it. The edge already forces HTTPS publicly.
+  force_https = false
+  # Flycast does not reliably wake a fully idled machine on a proxied request,
+  # so the backend stays on rather than risking a 502 on the first visit
+  # after idle.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = '15s'
+    timeout = '2s'
+    grace_period = '10s'
+    method = 'GET'
+    # A PRERENDERED page on purpose. '/' is the overview, which reads Steam and
+    # Mongo; health-checking it four times a minute would put third-party
+    # availability in the path of "is this machine alive", and answer a question
+    # about the network when asked one about the process.
+    path = '/items'
+
+# 512mb, not the 256mb default: the server bundle statically imports the
+# generated recipe and assembly data, and the prerendered output for ~2 300 item
+# pages is served out of the same process.
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1

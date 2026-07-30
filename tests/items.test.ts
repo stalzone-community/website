@@ -5,12 +5,19 @@ import {
 	compareItems,
 	damageCurve,
 	facetsOf,
+	flagsParam,
 	foldForSearch,
 	formatStat,
+	ITEM_FLAG_HINT,
+	ITEM_FLAG_LABEL,
+	ITEM_FLAGS,
 	matchesFilter,
+	parseFlags,
+	toggleFlag,
 	maxLevel,
+	rangesAtLevel,
 	rankSlug,
-	statsAtLevel
+	statsAtLevel,
 } from '../src/lib/items.ts';
 import type { Item, StatMeta } from '../src/lib/types.ts';
 
@@ -23,6 +30,7 @@ const item = (over: Partial<Item> = {}): Item => ({
 	name: { en: 'Test Rifle', fr: 'Fusil Détecteur' },
 	rank: 'RANK_MASTER',
 	status: 'PERSONAL_ON_USE',
+	values: {},
 	icon: '/icons/weapon/aaa.png',
 	stats: { weight: 3.5, clip_size: 20 },
 	enums: {},
@@ -45,6 +53,17 @@ test('search folds accents and case', () => {
 test('search matches other languages than the active one', () => {
 	// a French visitor typing an English weapon name should still find it
 	assert.ok(matchesFilter(item(), { q: 'Test Rifle' }, 'fr'));
+});
+
+test('Korean names fold to themselves', () => {
+	// Regression guard. Folding via NFD decomposes Hangul syllables into jamo,
+	// so the folded name no longer equals the name a Korean visitor types and
+	// every ko search returned nothing. Real catalogue entry (item z4v9).
+	const ko = '벨루가 단거리 탐지기';
+	assert.equal(foldForSearch(ko), ko);
+	const i = item({ name: { en: 'Beluga Short Range Detector', ko } });
+	assert.ok(matchesFilter(i, { q: ko }, 'ko'));
+	assert.ok(matchesFilter(i, { q: '탐지기' }, 'ko'));
 });
 
 test('filters compose', () => {
@@ -135,4 +154,67 @@ test('damage curve is flat, then falls, then flat', () => {
 test('rankSlug strips the prefix', () => {
 	assert.equal(rankSlug('RANK_MASTER'), 'master');
 	assert.equal(rankSlug('DEFAULT'), 'default');
+});
+
+test('effect bands widen with upgrade level', () => {
+	// 102 of 103 artefacts do this; nothing else in the catalogue does. Real
+	// numbers from Cycle (1k4q).
+	const art = item({
+		group: 'artefact',
+		stats: {},
+		ranges: { art_stamina_bonus: { min: 13.09, max: 15.4 } },
+		variants: [
+			{
+				level: 15,
+				stats: {},
+				ranges: { art_stamina_bonus: { min: 17.017, max: 20.02 } },
+				damage: null
+			}
+		]
+	});
+	assert.deepEqual(rangesAtLevel(art, 0).art_stamina_bonus, { min: 13.09, max: 15.4 });
+	assert.deepEqual(rangesAtLevel(art, 15).art_stamina_bonus, { min: 17.017, max: 20.02 });
+	// a level with no recorded delta keeps the base band rather than vanishing
+	assert.deepEqual(rangesAtLevel(art, 7).art_stamina_bonus, { min: 13.09, max: 15.4 });
+});
+
+
+/* ---------- the checkable filters ---------- */
+
+test('parseFlags takes only names it knows, and normalises the order', () => {
+	assert.deepEqual(parseFlags('tech-tree,craftable'), ['craftable', 'tech-tree']);
+	// visitor input: an unknown name drops out rather than reaching a predicate
+	assert.deepEqual(parseFlags('craftable,__proto__,nonsense'), ['craftable']);
+	assert.deepEqual(parseFlags(' craftable , upgradeable '), ['craftable', 'upgradeable']);
+	assert.deepEqual(parseFlags(''), []);
+	assert.deepEqual(parseFlags(null), []);
+});
+
+test('a flag set survives the round trip through the query string', () => {
+	const flags = parseFlags('attachments,craftable');
+	assert.deepEqual(parseFlags(flagsParam(flags)), flags);
+	// duplicates collapse, so two clicks on one chip cannot pile up in the URL
+	assert.equal(flagsParam(parseFlags('craftable,craftable')), 'craftable');
+	assert.equal(flagsParam([]), '');
+});
+
+test('a chip click adds a flag, and a second click takes it away', () => {
+	assert.deepEqual(toggleFlag([], 'craftable'), ['craftable']);
+	assert.deepEqual(toggleFlag(['craftable'], 'craftable'), []);
+	assert.deepEqual(toggleFlag(['craftable'], 'tech-tree'), ['craftable', 'tech-tree']);
+});
+
+test('every flag has a label and a hint, so a chip can never render blank', () => {
+	for (const f of ITEM_FLAGS) {
+		assert.ok(ITEM_FLAG_LABEL[f]?.length, `${f} needs a label`);
+		assert.ok(ITEM_FLAG_HINT[f]?.length, `${f} needs a hint`);
+	}
+});
+
+test('getting an item and using one are separate questions', () => {
+	// craftable and buyable are the two ways to end up holding an item; neither
+	// is "this is an ingredient" or "a trader wants this as payment", which are
+	// the same tables read backwards. Guard against them being merged again.
+	assert.ok(ITEM_FLAGS.includes('craftable') && ITEM_FLAGS.includes('buyable'));
+	assert.notEqual(ITEM_FLAG_HINT.craftable, ITEM_FLAG_HINT.buyable);
 });

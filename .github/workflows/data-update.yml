@@ -99,8 +99,14 @@ jobs:
         run: node scripts/vendor-db.ts
       # Throws UnknownStatKeyError if EXBO added a stat with an unmapped
       # namespace — a red run here beats silently dropping the stat.
+      #
+      # The whole db:build and not build-items.ts alone: recipes.json and the
+      # calculator index are static imports on the server, so `check` and
+      # `build` below cannot even resolve their modules without them. (The
+      # normalise still runs first inside db:build, so an unmapped stat key
+      # still fails here, with the same error.)
       - name: Normalise
-        run: node scripts/build-items.ts
+        run: npm run db:build
       - name: Field coverage
         run: node scripts/report-fields.ts | head -60
       - run: npm run check
@@ -114,6 +120,7 @@ jobs:
       app: stalzone-website
     secrets:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      APP_SECRETS: ${{ secrets.APP_SECRETS }}
 
   record:
     name: Record deployed version

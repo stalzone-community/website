@@ -1,6 +1,7 @@
 <script lang="ts">
 	import ItemCard from '$lib/components/ItemCard.svelte';
 	import { matchesFilter, rankSlug } from '$lib/items';
+	import { lang } from '$lib/lang.svelte';
 	import type { Rank } from '$lib/types';
 
 	let { data } = $props();
@@ -13,20 +14,19 @@
 	// holds — the alternative is a query-string round trip that cannot prerender.
 	let shown = $derived(
 		data.items.filter((i) =>
-			matchesFilter(i, { q, rank: rank || undefined, category: category || undefined }, 'en')
+			matchesFilter(i, { q, rank: rank || undefined, category: category || undefined }, lang())
 		)
 	);
 </script>
 
 <svelte:head>
-	<title>{data.group} — STALZONE database</title>
+	<title>{data.group} — Stalzone</title>
 </svelte:head>
 
 <header class="head">
-	<h1>{data.group.replace(/_/g, ' ')}</h1>
 	<p class="count">
-		{shown.length.toLocaleString('en')}{#if shown.length !== data.items.length}
-			<span class="of"> of {data.items.length.toLocaleString('en')}</span>
+		{shown.length.toLocaleString(lang())}{#if shown.length !== data.items.length}
+			<span class="of"> of {data.items.length.toLocaleString(lang())}</span>
 		{/if}
 	</p>
 </header>
@@ -78,10 +78,6 @@
 		align-items: baseline;
 		gap: var(--space-3);
 		margin-bottom: var(--space-4);
-	}
-
-	h1 {
-		text-transform: capitalize;
 	}
 
 	.count {
