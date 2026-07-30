@@ -33,7 +33,17 @@ export default defineConfig(({ mode }) => {
 				// adapter-node from day one: phase 1 (item database, map, bestiary)
 				// prerenders fine, but the auction tracker needs a server and a
 				// mid-project adapter swap is not worth saving.
-				adapter: adapter()
+				//
+				// precompress OFF, and it must stay off. It defaults to true, which
+				// writes a .gz and a .br beside every prerendered file — 11 978 files
+				// become 35 934 — and the Fly remote builder runs out of file
+				// descriptors doing it (EMFILE, in closeBundle, after a full 3-minute
+				// build). gw1-bestiary hit the identical wall on its ~2 300 pages.
+				//
+				// Nothing is lost: cdd-gateway compresses every response for every
+				// site it fronts (`encode zstd gzip` in its Caddyfile), so compression
+				// is a guarantee of the gateway's rather than a per-build artefact.
+				adapter: adapter({ precompress: false })
 			})
 		]
 	};
