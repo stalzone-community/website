@@ -117,7 +117,9 @@
 					<td class="attrs">
 						{#if row.attrs}
 							{#if row.attrs.quality !== null && row.attrs.quality > 0}
-								<span class="tag qlt">Q{row.attrs.quality}</span>
+								<span class="tag qlt" title="quality tier {row.attrs.quality}"
+									>Q{row.attrs.quality}</span
+								>
 							{/if}
 							{#if row.attrs.upgradeBonus !== null && row.attrs.upgradeBonus > 0}
 								<span class="tag" title="upgrade bonus"

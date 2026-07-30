@@ -189,13 +189,31 @@ export interface RawLot {
 /**
  * The part of a lot's `additional` block we are prepared to put on screen.
  *
- * Deliberately a subset. The block also carries `ndmg`, `md_k`, `ptn` and
- * `stats_random`, whose meanings are not documented and which we would be
- * guessing at — an unlabelled number next to a price is worse than no number,
- * so they are parsed by nobody until somebody knows what they are.
+ * Deliberately a subset. Measured over 200 RU lots across ten artefacts, which
+ * is where the cut falls:
+ *
+ *   upgrade_bonus     200/200   0 … 0.16, and 0 in 197 of them
+ *   qlt               196/200   0 … 2     (0×146, 1×49, 2×1)
+ *   it_transf_count    49/200   1 … 5
+ *   stats_random       25/200   -2.83 … 1.98
+ *   ndmg                5/200
+ *   ptn                 3/200   1 … 5
+ *   bonus_properties    1/200
+ *   md_k                1/200
+ *
+ * RARITY IS NOT IN HERE, and that is the useful negative result. Rarity is
+ * derived from the calculator's 0–190 quality scale, whose bands all open above
+ * 100 (calc/artefact.ts). Nothing in this block reaches 100: `qlt` is a small
+ * tier and `ptn` — the only other candidate — tops out at 5 and appears in
+ * three lots of two hundred. So a listing cannot be labelled legendary or rare
+ * from what the auction returns, and anything claiming otherwise is invented.
+ *
+ * `ndmg`, `md_k`, `ptn` and `stats_random` stay unparsed for the same reason:
+ * undocumented, mostly absent, and an unlabelled number beside a price is worse
+ * than no number.
  */
 export interface LotAttributes {
-	/** `qlt` — quality tier. 0 is the ordinary roll. */
+	/** `qlt` — quality tier, the Q1/Q2 the game shows. 0 is the ordinary roll. */
 	quality: number | null;
 	/** `upgrade_bonus` — 0 on an un-upgraded item; a small fraction otherwise */
 	upgradeBonus: number | null;
