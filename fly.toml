@@ -23,6 +23,16 @@ primary_region = 'cdg'
   # it is a property of the image (see the comment there), not of the machine.
   ADDRESS_HEADER = 'x-forwarded-for'
 
+  # Point the API client at production. This single value also flips
+  # exbo.ts:tier() to 'production', which is what makes the auction chart label
+  # its numbers 'live' instead of 'demo' — the tier is derived from the host
+  # rather than set separately, so the two can never disagree.
+  #
+  # Here and not in APP_SECRETS because it is not a credential: it belongs in a
+  # diff, where switching hosts is visible. The credentials it selects
+  # (EXBO_CLIENT_ID / EXBO_CLIENT_SECRET) are secrets and stay there.
+  EXBO_API_BASE = 'https://eapi.stalzone.com'
+
 [http_service]
   # matches ENV PORT=8080 in the Dockerfile
   internal_port = 8080
