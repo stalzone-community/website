@@ -13,7 +13,11 @@ RUN apt-get update \
 	&& apt-get install -y --no-install-recommends git ca-certificates \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY package.json package-lock.json ./
+# .npmrc is not optional here despite the glob: it carries `allow-git=all`, and
+# npm 12 refuses to install a git dependency without it. Both commons packages
+# are git deps, so leaving it out fails this layer — and only here, since CI
+# checks out the whole repo before installing and never notices.
+COPY package.json package-lock.json .npmrc* ./
 RUN npm ci
 
 COPY . .
