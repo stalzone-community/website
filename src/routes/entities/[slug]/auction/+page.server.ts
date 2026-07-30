@@ -16,6 +16,7 @@ import {
 	tier,
 	type ExboFailure
 } from '$lib/server/exbo';
+import { isRegionId, type RegionId } from '$lib/regions';
 
 /**
  * The one route in the site that is not static.
@@ -42,7 +43,7 @@ const EXPLANATION: Record<ExboFailure, string> = {
 	'bad-response': 'the auction API returned something unreadable'
 };
 
-export async function load({ params, setHeaders }) {
+export async function load({ params, setHeaders, cookies }) {
 	const found = resolve(params.slug);
 	if (!found) error(404, `Unknown entity "${params.slug}"`);
 
@@ -53,6 +54,15 @@ export async function load({ params, setHeaders }) {
 	const { item } = found;
 	const now = Date.now();
 	const source = tier() === 'production' ? 'live' : 'demo';
+
+	/* The visitor's region, from the cookie the top-bar switcher writes. The
+	   regions are separate markets with separate prices and very different depth
+	   — RU carries several times EU's listings — so this is the difference
+	   between a real answer and an empty table, not a formatting preference.
+	   Falls back to the server's configured default when unset or tampered with;
+	   `region()` validates against the known ids. */
+	const stored = cookies.get('sz:region');
+	const chosen: RegionId = isRegionId(stored) ? stored : region();
 
 	/**
 	 * Why the page is short of something, in words a visitor can read. A price
@@ -75,8 +85,8 @@ export async function load({ params, setHeaders }) {
 	// still has a price history, and a dead lots endpoint should not cost us the
 	// chart — so each settles on its own and neither can reject the other.
 	const [historyResult, lotsResult] = await Promise.allSettled([
-		saleHistory(item.id),
-		activeLots(item.id)
+		saleHistory(item.id, { region: chosen }),
+		activeLots(item.id, { region: chosen })
 	]);
 
 	let auction: PriceHistory | null = null;
@@ -112,10 +122,16 @@ export async function load({ params, setHeaders }) {
 		marketReason = explain(lotsResult.reason, 'lots');
 	}
 
-	// Matches the client's TTL in exbo.ts: a reload inside the minute is served
-	// without a round trip either way, so the page never looks fresher than the
-	// cache behind it.
-	setHeaders({ 'cache-control': 'public, max-age=60' });
+	/* Matches the client's TTL in exbo.ts: a reload inside the minute is served
+	   without a round trip either way, so the page never looks fresher than the
+	   cache behind it.
+
+	   PRIVATE, not public: this response now varies by the sz:region cookie, and
+	   a shared cache told it was public would hand one visitor's region to the
+	   next — RU prices under an EU heading, from a cache we do not control and
+	   cannot purge. `private` keeps the minute of browser caching and takes the
+	   shared hop away. */
+	setHeaders({ 'cache-control': 'private, max-age=60' });
 
 	return {
 		auction,
@@ -125,6 +141,6 @@ export async function load({ params, setHeaders }) {
 		// What the asks are compared against. Null when the chart is generated, so
 		// the spread is never computed against invented numbers.
 		recentMedian: auction.source === 'sample' ? null : latestMedian(auction),
-		region: region()
+		region: chosen
 	};
 }

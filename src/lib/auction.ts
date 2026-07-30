@@ -176,6 +176,80 @@ export interface RawLot {
 	buyoutPrice?: number;
 	startTime: string;
 	endTime: string;
+	/**
+	 * Per-lot item state, returned because we ask with `additional=true`. Keys
+	 * vary by item kind and by lot — a plain crafted item carries almost nothing,
+	 * a rolled artefact carries most of them. Untyped here on purpose: this is
+	 * whatever the API sent, and `lotAttributes` decides what we are willing to
+	 * claim about it.
+	 */
+	additional?: Record<string, unknown>;
+}
+
+/**
+ * The part of a lot's `additional` block we are prepared to put on screen.
+ *
+ * Deliberately a subset. The block also carries `ndmg`, `md_k`, `ptn` and
+ * `stats_random`, whose meanings are not documented and which we would be
+ * guessing at — an unlabelled number next to a price is worse than no number,
+ * so they are parsed by nobody until somebody knows what they are.
+ */
+export interface LotAttributes {
+	/** `qlt` — quality tier. 0 is the ordinary roll. */
+	quality: number | null;
+	/** `upgrade_bonus` — 0 on an un-upgraded item; a small fraction otherwise */
+	upgradeBonus: number | null;
+	/** `bonus_properties` — named rolls, e.g. MAX_WEIGHT_BONUS */
+	bonuses: string[];
+	/** `it_transf_count` — how many times this item has changed hands */
+	transfers: number | null;
+}
+
+function whole(value: unknown): number | null {
+	return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * `additional` → what the table shows, or null when the lot says nothing worth
+ * a column. Two artefacts of the same name can differ several-fold in price
+ * purely on these, so a price list without them is comparing unlike things.
+ */
+export function lotAttributes(additional: unknown): LotAttributes | null {
+	if (!additional || typeof additional !== 'object') return null;
+	const a = additional as Record<string, unknown>;
+
+	const bonuses = Array.isArray(a.bonus_properties)
+		? a.bonus_properties.filter((b): b is string => typeof b === 'string')
+		: [];
+	const attrs: LotAttributes = {
+		quality: whole(a.qlt),
+		upgradeBonus: whole(a.upgrade_bonus),
+		bonuses,
+		transfers: whole(a.it_transf_count)
+	};
+
+	// A lot whose every attribute is the boring default earns no column. Quality
+	// 0 with no upgrade and no bonuses is simply "an ordinary one of these", and
+	// saying so on every row would bury the rows where it is not true.
+	const interesting =
+		(attrs.quality ?? 0) > 0 || (attrs.upgradeBonus ?? 0) > 0 || attrs.bonuses.length > 0;
+	return interesting ? attrs : null;
+}
+
+/**
+ * `MAX_WEIGHT_BONUS` → `Max weight bonus`.
+ *
+ * The vocabulary is the API's own and is not in the item database, so there is
+ * nothing to look these up in. Expanding the two suffixes that recur keeps it
+ * readable without inventing meanings for the names themselves.
+ */
+export function bonusLabel(name: string): string {
+	const words = name
+		.toLowerCase()
+		.split('_')
+		.map((w) => (w === 'acc' ? 'accumulation' : w));
+	const text = words.join(' ');
+	return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 export interface LotRow {
@@ -195,6 +269,8 @@ export interface LotRow {
 	unbid: boolean;
 	/** ms until the listing expires; already expired if negative */
 	endsIn: number;
+	/** quality, upgrade and rolled bonuses; null when this one is ordinary */
+	attrs: LotAttributes | null;
 }
 
 export interface Market {
@@ -210,6 +286,12 @@ export interface Market {
 	median: number | null;
 	/** how many of the returned rows are bid-only, with no buyout */
 	bidOnly: number;
+	/**
+	 * Whether any row has attributes worth showing. The table adds its item
+	 * column only when this is true, so a page of plain ammunition does not grow
+	 * a column of empty cells to accommodate the one item kind that rolls.
+	 */
+	hasAttrs: boolean;
 	source: PriceSource;
 	fetchedAt: number;
 }
@@ -275,7 +357,8 @@ export function summariseLots(lots: readonly RawLot[], opts: MarketOptions): Mar
 			// only claims "nobody has bid yet"; a buy-it-now lot is not unbid, it
 			// has nothing to bid on
 			unbid: bid !== null && highest === null,
-			endsIn: Number.isFinite(end) ? end - opts.fetchedAt : 0
+			endsIn: Number.isFinite(end) ? end - opts.fetchedAt : 0,
+			attrs: lotAttributes(lot.additional)
 		});
 	}
 	if (!rows.length) return null;
@@ -292,6 +375,7 @@ export function summariseLots(lots: readonly RawLot[], opts: MarketOptions): Mar
 		cheapest: buyouts.length ? buyouts[0] : null,
 		median: buyouts.length ? Math.round(median(buyouts)) : null,
 		bidOnly: rows.filter((r) => r.buyout === null).length,
+		hasAttrs: rows.some((r) => r.attrs !== null),
 		source: opts.source,
 		fetchedAt: opts.fetchedAt
 	};

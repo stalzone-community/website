@@ -8,6 +8,8 @@ import {
 	latestMedian,
 	priceChange,
 	samplePriceHistory,
+	bonusLabel,
+	lotAttributes,
 	summariseLots,
 	unitPrice,
 	type RawLot,
@@ -383,4 +385,58 @@ test('a lot quoting neither price is still refused', () => {
 		}
 	];
 	assert.equal(summariseLots(lots, { source: 'live', fetchedAt: NOW }), null);
+});
+
+test('a rolled artefact reports its quality, upgrade and bonuses', () => {
+	// Verbatim from eapi.stalzone.com (RU, artefact "5rpq").
+	const attrs = lotAttributes({
+		md_k: 0.10000004,
+		bonus_properties: ['MAX_WEIGHT_BONUS'],
+		ndmg: 0.10253003878071856,
+		it_transf_count: 1,
+		qlt: 1,
+		ptn: 8,
+		upgrade_bonus: 0.002208,
+		spawn_time: 1714474550880
+	});
+	assert.ok(attrs);
+	assert.equal(attrs.quality, 1);
+	assert.equal(attrs.upgradeBonus, 0.002208);
+	assert.deepEqual(attrs.bonuses, ['MAX_WEIGHT_BONUS']);
+	assert.equal(attrs.transfers, 1);
+});
+
+test('an ordinary item earns no attributes at all', () => {
+	// The common case: quality 0, no upgrade, nothing rolled. Repeating "Q0" on
+	// every row would bury the rows that actually differ.
+	assert.equal(lotAttributes({ qlt: 0, upgrade_bonus: 0, spawn_time: 1785425364440 }), null);
+	assert.equal(lotAttributes({ upgrade_bonus: 0 }), null);
+	assert.equal(lotAttributes(undefined), null);
+	assert.equal(lotAttributes(null), null);
+});
+
+test('the item column appears only when some lot has something to say', () => {
+	const plain: RawLot[] = [
+		{
+			amount: 1,
+			startPrice: 0,
+			buyoutPrice: 4999,
+			startTime: new Date(NOW - HOUR).toISOString(),
+			endTime: new Date(NOW + HOUR).toISOString(),
+			additional: { qlt: 0, upgrade_bonus: 0 }
+		}
+	];
+	assert.equal(summariseLots(plain, { source: 'live', fetchedAt: NOW })?.hasAttrs, false);
+
+	const rolled: RawLot[] = [
+		{ ...plain[0], additional: { qlt: 1, upgrade_bonus: 0, bonus_properties: ['BLEEDING_ACC'] } }
+	];
+	const market = summariseLots(rolled, { source: 'live', fetchedAt: NOW });
+	assert.equal(market?.hasAttrs, true);
+	assert.equal(market?.rows[0].attrs?.quality, 1);
+});
+
+test('bonus names read as words, expanding the abbreviation that recurs', () => {
+	assert.equal(bonusLabel('MAX_WEIGHT_BONUS'), 'Max weight bonus');
+	assert.equal(bonusLabel('BLEEDING_ACC'), 'Bleeding accumulation');
 });

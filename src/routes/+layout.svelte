@@ -24,6 +24,7 @@
 	// language switching is parked for now — see the tools snippet below
 	// import LangSwitcher from '$lib/components/LangSwitcher.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
+	import RegionSwitcher from '$lib/components/RegionSwitcher.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import { latestVersionInfo } from 'sveltekit-commons/changelog';
 	import {
@@ -82,6 +83,10 @@
 		const entity = page.data.entity as
 			| { name?: Record<string, string>; icon?: string | null; group?: string }
 			| undefined;
+
+		// the overview names itself: the bar is the site's one heading slot, and a
+		// bare bar on the page every visitor lands on first reads as unfinished
+		if (p === '/') return { section: null, title: 'Overview', icon: null };
 
 		if (p.startsWith('/entities/') || p.startsWith('/item/')) {
 			return {
@@ -184,6 +189,11 @@
 		<!-- the palette, not a field of its own: one search on the site, reachable
 		     the same way from the keyboard and from a phone with none -->
 		<SearchChip onopen={() => palette?.open()} compact={compactChips} />
+		<!-- Auction prices are per region and the regions do not agree: RU carries
+		     several times EU's listings, so a visitor left on the default is
+		     reading the thinnest market. It sits in the bar rather than on the
+		     auction tab because it is a standing preference, not a per-page one. -->
+		<RegionSwitcher compact={compactChips} />
 		<!-- the switcher is hidden for now, so nothing calls readStoredLang() and
 		     the site stays on the English `lang.svelte.ts` default everywhere -->
 		<!-- <LangSwitcher /> -->

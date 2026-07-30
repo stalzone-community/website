@@ -18,7 +18,7 @@
 	 * here — the API sorts across every lot, so sorting our slice of twenty would
 	 * only shuffle an already-truncated list.
 	 */
-	import { askSpread, type Market } from '$lib/auction';
+	import { askSpread, bonusLabel, type Market } from '$lib/auction';
 	import { StatTile } from 'sveltekit-commons';
 
 	interface Props {
@@ -88,6 +88,7 @@
 			<th scope="col" class="num">Buyout, each</th>
 			<th scope="col" class="num">Buyout, lot</th>
 			<th scope="col" class="num">Bid</th>
+			{#if market.hasAttrs}<th scope="col">Item</th>{/if}
 			<th scope="col" class="num">Ends in</th>
 		</tr>
 	</thead>
@@ -107,6 +108,28 @@
 							title="opening price — no bids yet">*</span
 						>{/if}</td
 				>
+				{#if market.hasAttrs}
+					<!-- Why this column exists: two artefacts of the same name can differ
+					     several-fold in price on quality and rolls alone, so a price
+					     beside a bare item name is comparing unlike things. Blank on an
+					     ordinary one — the interesting rows should stand out, not be
+					     buried under "quality 0" repeated twenty times. -->
+					<td class="attrs">
+						{#if row.attrs}
+							{#if row.attrs.quality !== null && row.attrs.quality > 0}
+								<span class="tag qlt">Q{row.attrs.quality}</span>
+							{/if}
+							{#if row.attrs.upgradeBonus !== null && row.attrs.upgradeBonus > 0}
+								<span class="tag" title="upgrade bonus"
+									>+{(row.attrs.upgradeBonus * 100).toFixed(2)}%</span
+								>
+							{/if}
+							{#each row.attrs.bonuses as b (b)}
+								<span class="tag bonus">{bonusLabel(b)}</span>
+							{/each}
+						{/if}
+					</td>
+				{/if}
 				<td class="num dim">{left(row.endsIn)}</td>
 			</tr>
 		{/each}
@@ -181,6 +204,30 @@
 
 	.dim {
 		color: var(--text-dim);
+	}
+
+	.attrs {
+		/* the column is descriptive, not numeric — it wraps rather than forcing the
+		   price columns narrower on a phone */
+		white-space: normal;
+	}
+
+	.tag {
+		display: inline-block;
+		padding: 0 var(--space-1);
+		margin: 0 var(--space-1) 2px 0;
+		font-size: var(--text-xs);
+		color: var(--text-dim);
+		white-space: nowrap;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm, 3px);
+	}
+
+	.tag.qlt,
+	.tag.bonus {
+		/* a roll is the thing worth spotting in a column of prices */
+		color: var(--text);
+		border-color: var(--accent, var(--border));
 	}
 
 	.mark {
