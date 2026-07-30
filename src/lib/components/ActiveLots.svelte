@@ -118,7 +118,14 @@
 					<td class="attrs">
 						{#if row.attrs}
 							{#if row.attrs.rarity && row.attrs.rarity !== 'ordinary'}
-								<span class="tag qlt" title="artefact rarity">{row.attrs.rarity}</span>
+								<!-- The tint is the ladder; the word is the claim. Colour is
+								     reinforcement only, so a reader who cannot separate the
+								     hues loses nothing. -->
+								<span
+									class="tag rarity"
+									style="--tint: var(--rarity-{row.attrs.rarity})"
+									title="artefact rarity">{row.attrs.rarity}</span
+								>
 							{/if}
 							{#if row.attrs.upgradeBonus !== null && row.attrs.upgradeBonus > 0}
 								<span class="tag" title="upgrade bonus"
@@ -225,11 +232,15 @@
 	}
 
 	/* rarity is a name from the game, shown as the game writes it */
-	.tag.qlt {
+	.tag.rarity {
 		text-transform: capitalize;
+		color: var(--tint);
+		border-color: var(--tint);
+		/* the tint carries the ladder, so it needs enough weight to read as a
+		   colour rather than as a tired border */
+		font-weight: 500;
 	}
 
-	.tag.qlt,
 	.tag.bonus {
 		/* a roll is the thing worth spotting in a column of prices */
 		color: var(--text);

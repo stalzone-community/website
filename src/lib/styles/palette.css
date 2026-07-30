@@ -73,6 +73,35 @@
 	--rank-legend: #ded04a;
 	--rank-quest_item: #d39b4f;
 
+	/* ── artefact rarity ───────────────────────────────────────────────
+	   AUTHORED, NOT DECODED, and unlike the rank bands above there was no file
+	   to read: `stalker/models/dropped_tooltip/stick_<RANK>.ol` gave the ranks
+	   their real hues, and nothing equivalent exists for artefact rarity —
+	   searching the install for quality/rarity assets and for the vocabulary
+	   itself turns up JVM class names and nothing else. The ladder's names come
+	   from the calculator spec, which recovered them from a competitor's client
+	   bundle, so they are the game's words but not the game's colours.
+
+	   Treat these as provisional. The comment on the rank bands is the warning
+	   worth repeating: the plausible ramp is often the real one shifted a tier.
+	   If the true colours are ever read off the client, replace these — the
+	   names are what the table asserts, and the tint is only reinforcement.
+
+	   It is the conventional ascending ramp on purpose: it is what a player
+	   already expects a ladder to look like, and every tag carries its rarity
+	   in words as well, so a reader is never relying on hue alone. It does run
+	   close to the rank bands in places, which is tolerable because the two
+	   never share a component — rank is a border on an item card, rarity is a
+	   tag inside the auction table — and the word is always there to settle it. */
+
+	--rarity-ordinary: #8a8a80;
+	--rarity-unordinary: #6fae62;
+	--rarity-special: #4fa9a0;
+	--rarity-rare: #5b8fd6;
+	--rarity-exclusive: #a97ad6;
+	--rarity-legendary: #dfa63f;
+	--rarity-unique: #e2603f;
+
 	/* faction marks — the hues of the game's own emblems (see $lib/factions).
 	   They deliberately sit a step brighter than the rank bands above: the two
 	   appear on the same card, and the rank is a wide border while a faction is
@@ -258,6 +287,14 @@
 		--rank-master: #c0322e;
 		--rank-legend: #8a7b0e;
 		--rank-quest_item: #a06a15;
+		--rarity-ordinary: #6f6f66;
+		--rarity-unordinary: #3f7a35;
+		--rarity-special: #1f7168;
+		--rarity-rare: #2f5f9e;
+		--rarity-exclusive: #70479c;
+		--rarity-legendary: #96650a;
+		--rarity-unique: #a63c1f;
+
 
 		/* darkened for the light skin, where the emblem hues glare */
 		--faction-frontier: #b23c34;
@@ -346,6 +383,15 @@
 	--rank-master: #c0322e;
 	--rank-legend: #8a7b0e;
 	--rank-quest_item: #a06a15;
+
+	--rarity-ordinary: #6f6f66;
+	--rarity-unordinary: #3f7a35;
+	--rarity-special: #1f7168;
+	--rarity-rare: #2f5f9e;
+	--rarity-exclusive: #70479c;
+	--rarity-legendary: #96650a;
+	--rarity-unique: #a63c1f;
+
 
 	/* darkened for the light skin, where the emblem hues glare */
 	--faction-frontier: #b23c34;
