@@ -109,17 +109,16 @@
 						>{/if}</td
 				>
 				{#if market.hasAttrs}
-					<!-- Why this column exists: two artefacts of the same name can differ
-					     several-fold in price on quality and rolls alone, so a price
-					     beside a bare item name is comparing unlike things. Blank on an
-					     ordinary one — the interesting rows should stand out, not be
-					     buried under "quality 0" repeated twenty times. -->
+					<!-- Why this column exists: rarity moves an artefact's price by orders
+					     of magnitude — the same artefact runs 349k at the bottom rung and
+					     310M four rungs up — so a price beside a bare item name is
+					     comparing unlike things. Blank on an ordinary one: the rows worth
+					     spotting should stand out, not be buried under the commonest word
+					     in the table repeated twenty times. -->
 					<td class="attrs">
 						{#if row.attrs}
-							{#if row.attrs.quality !== null && row.attrs.quality > 0}
-								<span class="tag qlt" title="quality tier {row.attrs.quality}"
-									>Q{row.attrs.quality}</span
-								>
+							{#if row.attrs.rarity && row.attrs.rarity !== 'ordinary'}
+								<span class="tag qlt" title="artefact rarity">{row.attrs.rarity}</span>
 							{/if}
 							{#if row.attrs.upgradeBonus !== null && row.attrs.upgradeBonus > 0}
 								<span class="tag" title="upgrade bonus"
@@ -223,6 +222,11 @@
 		white-space: nowrap;
 		border: 1px solid var(--border);
 		border-radius: var(--radius-sm, 3px);
+	}
+
+	/* rarity is a name from the game, shown as the game writes it */
+	.tag.qlt {
+		text-transform: capitalize;
 	}
 
 	.tag.qlt,

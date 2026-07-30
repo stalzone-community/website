@@ -400,7 +400,7 @@ test('a rolled artefact reports its quality, upgrade and bonuses', () => {
 		spawn_time: 1714474550880
 	});
 	assert.ok(attrs);
-	assert.equal(attrs.quality, 1);
+	assert.equal(attrs.rarity, 'unordinary', 'qlt 1 is the second rung of the ladder');
 	assert.equal(attrs.upgradeBonus, 0.002208);
 	assert.deepEqual(attrs.bonuses, ['MAX_WEIGHT_BONUS']);
 	assert.equal(attrs.transfers, 1);
@@ -433,10 +433,24 @@ test('the item column appears only when some lot has something to say', () => {
 	];
 	const market = summariseLots(rolled, { source: 'live', fetchedAt: NOW });
 	assert.equal(market?.hasAttrs, true);
-	assert.equal(market?.rows[0].attrs?.quality, 1);
+	assert.equal(market?.rows[0].attrs?.rarity, 'unordinary');
 });
 
 test('bonus names read as words, expanding the abbreviation that recurs', () => {
 	assert.equal(bonusLabel('MAX_WEIGHT_BONUS'), 'Max weight bonus');
 	assert.equal(bonusLabel('BLEEDING_ACC'), 'Bleeding accumulation');
+});
+
+test('qlt maps onto the rarity ladder, and ordinary earns no tag', () => {
+	// Measured, not assumed: over 400 RU lots qlt spans 0–5 and tracks price by
+	// orders of magnitude within a single artefact.
+	assert.equal(lotAttributes({ qlt: 5 })?.rarity, 'legendary');
+	assert.equal(lotAttributes({ qlt: 3 })?.rarity, 'rare');
+
+	// qlt 0 is the bottom rung and the commonest value; a tag on every one of
+	// those would say nothing, so the lot reports no attributes at all.
+	assert.equal(lotAttributes({ qlt: 0 }), null);
+
+	// A rung the ladder does not have is not a rarity we will invent.
+	assert.equal(lotAttributes({ qlt: 99 }), null);
 });

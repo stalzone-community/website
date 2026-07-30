@@ -20,6 +20,9 @@
  * Pure and dependency-free so node:test can load it, same rule as $lib/items.
  * Everything that touches the network lives in $lib/server/exbo.
  */
+// types only, and calc/artefact is itself dependency-free — the rarity
+// vocabulary lives there and there is no reason for a second copy of it
+import type { Rarity } from './calc/artefact.ts';
 
 /** One completed sale, as the API reports it. Mirrors exbo's `SaleEntry`. */
 export interface Sale {
@@ -189,32 +192,62 @@ export interface RawLot {
 /**
  * The part of a lot's `additional` block we are prepared to put on screen.
  *
- * Deliberately a subset. Measured over 200 RU lots across ten artefacts, which
- * is where the cut falls:
+ * Deliberately a subset, and the cut is drawn from measurement rather than
+ * taste. Over 400 RU lots — the cheapest AND dearest twenty of ten artefacts,
+ * because sampling only the cheap end is what hid the top of the ladder first
+ * time round:
  *
- *   upgrade_bonus     200/200   0 … 0.16, and 0 in 197 of them
- *   qlt               196/200   0 … 2     (0×146, 1×49, 2×1)
- *   it_transf_count    49/200   1 … 5
- *   stats_random       25/200   -2.83 … 1.98
- *   ndmg                5/200
- *   ptn                 3/200   1 … 5
- *   bonus_properties    1/200
- *   md_k                1/200
+ *   upgrade_bonus     always present, 0 … 0.16, and 0 in all but a handful
+ *   qlt               0 … 5, absent on ~1.5% of lots
+ *   it_transf_count   1 … 5
+ *   stats_random      -2.83 … 1.98, on an eighth of lots
+ *   ndmg, ptn, md_k   1–5 lots in 400
  *
- * RARITY IS NOT IN HERE, and that is the useful negative result. Rarity is
- * derived from the calculator's 0–190 quality scale, whose bands all open above
- * 100 (calc/artefact.ts). Nothing in this block reaches 100: `qlt` is a small
- * tier and `ptn` — the only other candidate — tops out at 5 and appears in
- * three lots of two hundred. So a listing cannot be labelled legendary or rare
- * from what the auction returns, and anything claiming otherwise is invented.
+ * WHAT IS IN HERE: rarity, via `qlt` (see RARITY_BY_QLT).
  *
- * `ndmg`, `md_k`, `ptn` and `stats_random` stay unparsed for the same reason:
- * undocumented, mostly absent, and an unlabelled number beside a price is worse
- * than no number.
+ * WHAT IS NOT: the 0–190 quality percentage, and the +0…+15 upgrade level.
+ * Neither survives the payload. `ptn` was the only candidate for quality and
+ * tops out at 5 across three lots in four hundred. `upgrade_bonus` is not the
+ * level either — at the documented +2%/level it would divide by 0.02 into whole
+ * numbers, and instead gives 0.214, 1.53, 0.42, 1.81, 8.006. It is a per-stat
+ * contribution, so the level that produced it cannot be recovered from it.
+ *
+ * `ndmg`, `md_k`, `ptn` and `stats_random` therefore stay unparsed: undocumented,
+ * mostly absent, and an unlabelled number beside a price is worse than none.
  */
+/**
+ * `qlt` → a rarity name.
+ *
+ * That `qlt` is rarity and not a condition flag is measured, not assumed: over
+ * 400 RU lots it spans 0–5 and, within a single artefact, tracks price by
+ * orders of magnitude — qodk goes 349k / 3M / 27M / 100M / 310M across qlt 0–4,
+ * and kqgy reaches 10B at qlt 5. Nothing but rarity moves a price like that.
+ *
+ * WHAT IS NOT SETTLED is where the ladder starts, and it is one line to change:
+ * the game has seven rarities and `qlt` was only ever seen across six of them.
+ * This mapping reads qlt 0 as `ordinary`, because qlt 0 is both the commonest
+ * value (140 of 400) and the cheapest, which is what ordinary should look like.
+ * The alternative is that qlt IS `RARITY_INDEX` verbatim — where `ordinary` is
+ * null, matching the handful of lots with no `qlt` at all — making qlt 0
+ * `unordinary` and qlt 5 `unique`. That reading matches the constant more
+ * neatly and the market much less: it would mean six ordinary artefacts listed
+ * out of four hundred.
+ *
+ * Verify against one in-game listing before trusting the label.
+ */
+const RARITY_BY_QLT: readonly Rarity[] = [
+	'ordinary',
+	'unordinary',
+	'special',
+	'rare',
+	'exclusive',
+	'legendary',
+	'unique'
+];
+
 export interface LotAttributes {
-	/** `qlt` — quality tier, the Q1/Q2 the game shows. 0 is the ordinary roll. */
-	quality: number | null;
+	/** from `qlt`; null when the lot did not say */
+	rarity: Rarity | null;
 	/** `upgrade_bonus` — 0 on an un-upgraded item; a small fraction otherwise */
 	upgradeBonus: number | null;
 	/** `bonus_properties` — named rolls, e.g. MAX_WEIGHT_BONUS */
@@ -239,8 +272,9 @@ export function lotAttributes(additional: unknown): LotAttributes | null {
 	const bonuses = Array.isArray(a.bonus_properties)
 		? a.bonus_properties.filter((b): b is string => typeof b === 'string')
 		: [];
+	const tier = whole(a.qlt);
 	const attrs: LotAttributes = {
-		quality: whole(a.qlt),
+		rarity: tier !== null ? (RARITY_BY_QLT[tier] ?? null) : null,
 		upgradeBonus: whole(a.upgrade_bonus),
 		bonuses,
 		transfers: whole(a.it_transf_count)
@@ -250,7 +284,9 @@ export function lotAttributes(additional: unknown): LotAttributes | null {
 	// 0 with no upgrade and no bonuses is simply "an ordinary one of these", and
 	// saying so on every row would bury the rows where it is not true.
 	const interesting =
-		(attrs.quality ?? 0) > 0 || (attrs.upgradeBonus ?? 0) > 0 || attrs.bonuses.length > 0;
+		(attrs.rarity !== null && attrs.rarity !== 'ordinary') ||
+		(attrs.upgradeBonus ?? 0) > 0 ||
+		attrs.bonuses.length > 0;
 	return interesting ? attrs : null;
 }
 
