@@ -328,3 +328,59 @@ test('priceChange reports the move across the window', () => {
 		50
 	);
 });
+
+test('a buy-it-now listing prices from its buyout, with no opening bid', () => {
+	// Verbatim shape from eapi.stalzone.com (EU, artifact "gyjg"): the API says
+	// "no bidding on this lot" with startPrice 0, not by omitting the field.
+	const lots: RawLot[] = [
+		{
+			amount: 1,
+			startPrice: 0,
+			buyoutPrice: 4999,
+			startTime: new Date(NOW - HOUR).toISOString(),
+			endTime: new Date(NOW + 24 * HOUR).toISOString()
+		}
+	];
+	const market = summariseLots(lots, { source: 'live', fetchedAt: NOW, total: 67 });
+	assert.ok(market, 'a buy-it-now lot is a listing, not something to filter out');
+
+	assert.equal(market.rows.length, 1);
+	assert.equal(market.rows[0].buyoutEach, 4999);
+	assert.equal(market.rows[0].bid, null, 'there is no bidding side to report');
+	assert.equal(market.rows[0].bidEach, null);
+	assert.equal(market.rows[0].unbid, false, 'nothing to bid on is not "nobody has bid yet"');
+	assert.equal(market.cheapest, 4999);
+	assert.equal(market.bidOnly, 0);
+	assert.equal(market.total, 67);
+});
+
+test('a page of buy-it-now lots is a market, not "nothing is listed"', () => {
+	// The regression this guards: requiring startPrice > 0 dropped every row, so
+	// an item listed exclusively as buy-it-now reported no listings at all while
+	// the API was returning dozens.
+	const lots: RawLot[] = [85000, 205000, 125000, 300000].map((buyoutPrice) => ({
+		amount: 1,
+		startPrice: 0,
+		buyoutPrice,
+		startTime: new Date(NOW - HOUR).toISOString(),
+		endTime: new Date(NOW + 12 * HOUR).toISOString()
+	}));
+	const market = summariseLots(lots, { source: 'live', fetchedAt: NOW, total: 29 });
+	assert.ok(market);
+	assert.equal(market.rows.length, 4);
+	assert.equal(market.cheapest, 85000);
+});
+
+test('a lot quoting neither price is still refused', () => {
+	// 0/0 carries no number to show; that one really is unpriceable.
+	const lots: RawLot[] = [
+		{
+			amount: 1,
+			startPrice: 0,
+			buyoutPrice: 0,
+			startTime: new Date(NOW - HOUR).toISOString(),
+			endTime: new Date(NOW + HOUR).toISOString()
+		}
+	];
+	assert.equal(summariseLots(lots, { source: 'live', fetchedAt: NOW }), null);
+});

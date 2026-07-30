@@ -185,9 +185,12 @@ export interface LotRow {
 	buyout: number | null;
 	/** the same per item — what you are actually paying */
 	buyoutEach: number | null;
-	/** highest bid, or the opening price when nobody has bid yet */
-	bid: number;
-	bidEach: number;
+	/**
+	 * Highest bid, or the opening price when nobody has bid yet. Null on a
+	 * buy-it-now listing, which has no bidding side at all.
+	 */
+	bid: number | null;
+	bidEach: number | null;
 	/** true while `bid` is still just the seller's asking price */
 	unbid: boolean;
 	/** ms until the listing expires; already expired if negative */
@@ -226,28 +229,52 @@ export interface MarketOptions {
  * than re-sorted here: the API sorts across *all* lots, so re-sorting the first
  * twenty would only reorder an already-truncated slice.
  */
+/**
+ * A price the API is actually quoting, or null.
+ *
+ * The auction endpoint uses 0 to mean "this listing has no such price" instead
+ * of leaving the field out, so a plain `typeof === 'number'` check reads an
+ * absent buyout as a free item.
+ */
+function price(value: unknown): number | null {
+	return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+}
+
 export function summariseLots(lots: readonly RawLot[], opts: MarketOptions): Market | null {
 	const rows: LotRow[] = [];
 	for (const lot of lots) {
 		const amount = Number.isFinite(lot.amount) && lot.amount > 0 ? lot.amount : 1;
 		const end = Date.parse(lot.endTime);
-		// A lot with no opening price is not a listing we can price.
-		if (!Number.isFinite(lot.startPrice) || lot.startPrice <= 0) continue;
 
-		const buyout =
-			typeof lot.buyoutPrice === 'number' && lot.buyoutPrice > 0 ? lot.buyoutPrice : null;
-		const bid =
-			typeof lot.currentPrice === 'number' && lot.currentPrice > 0
-				? lot.currentPrice
-				: lot.startPrice;
+		const buyout = price(lot.buyoutPrice);
+		const opening = price(lot.startPrice);
+		const highest = price(lot.currentPrice);
+
+		/* A lot needs ONE of the two prices, not an opening price specifically.
+		   The API signals "this listing has no such price" with a 0 rather than by
+		   omitting the field, and either side may be the missing one:
+
+		     startPrice 0, buyoutPrice 125000   buy it now, no bidding
+		     startPrice 1, buyoutPrice 0        bidding, no buy it now
+
+		   Requiring `startPrice > 0` dropped every buy-it-now listing. Where an
+		   item is listed that way exclusively — common on the thinner regions —
+		   every row was filtered out, summariseLots returned null, and the panel
+		   reported "nothing is listed for this item right now" over dozens of real
+		   lots the API had just returned. */
+		if (buyout === null && opening === null) continue;
+
+		const bid = highest ?? opening;
 
 		rows.push({
 			amount,
 			buyout,
 			buyoutEach: buyout === null ? null : Math.round(buyout / amount),
 			bid,
-			bidEach: Math.round(bid / amount),
-			unbid: typeof lot.currentPrice !== 'number' || lot.currentPrice <= 0,
+			bidEach: bid === null ? null : Math.round(bid / amount),
+			// only claims "nobody has bid yet"; a buy-it-now lot is not unbid, it
+			// has nothing to bid on
+			unbid: bid !== null && highest === null,
 			endsIn: Number.isFinite(end) ? end - opts.fetchedAt : 0
 		});
 	}

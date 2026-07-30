@@ -99,7 +99,14 @@
 				<td class="num dim">{row.buyout === null ? '—' : fmt(row.buyout)}</td>
 				<!-- An unbid lot's "bid" is only the seller's opening price, which is
 				     not the same claim as somebody having bid it. Say which. -->
-				<td class="num dim">{fmt(row.bid)}{#if row.unbid}<span class="mark" title="opening price — no bids yet">*</span>{/if}</td>
+				<!-- A buy-it-now listing has no bidding side, so there is no number to
+				     show and an em dash is the honest cell, not a zero. -->
+				<td class="num dim"
+					>{row.bid === null ? '—' : fmt(row.bid)}{#if row.unbid}<span
+							class="mark"
+							title="opening price — no bids yet">*</span
+						>{/if}</td
+				>
 				<td class="num dim">{left(row.endsIn)}</td>
 			</tr>
 		{/each}
